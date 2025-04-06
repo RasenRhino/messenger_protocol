@@ -1,0 +1,17 @@
+{
+    "Alice": {
+        "key": "584857",
+        "salt": "gKVmNDNseAG8fgAq",
+        "hashed": "51e7f96200e7cd7d11ac1a84e3220976c5f924c3f36863ec89087b79cd525991"
+    },
+    "Bob": {
+        "key": "770128",
+        "salt": "1W0TOC8KUWCf0axN",
+        "hashed": "35cb81adaceda16c6ee0e524e3713ebc0a56e30890a7770a592468a08164e206"
+    },
+    "Mallory": {
+        "key": "880265",
+        "salt": "9Z751aYiZqXQFhV4",
+        "hashed": "94e60dfde099facc4a55897a07f3b50b598d0e45da0bcff8ec2ab546a46ca828"
+    }
+}

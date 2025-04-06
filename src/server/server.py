@@ -4,9 +4,19 @@ from twisted.internet.protocol import Factory, Protocol
 from twisted.internet import reactor
 import sqlite3, json
 from dataclasses import asdict
+from crypto_utils.core import (
+    asymmetric_decryption,
+    symmetric_decryption,
+    symmetric_encryption,
+    asymmetric_encryption,
+    generate_dh_contribution,
+    generate_symmetric_key,
+)
 
 MAX_ERRORS = 3
 
+#sql db schema 
+# username:key:salt
 
 def parse_message(data: dict, decrypt_fn=None, key=None) -> Message:
     metadata = Metadata(**data['metadata'])
@@ -30,7 +40,6 @@ class ServerProtocol(Protocol):
         super().__init__()
         self.state_dict = {}
         self.error_count = 0
-        self.state_dict_threshold = {PacketType.CS_AUTH: 5}
 
     def connectionMade(self):
         self.db = sqlite3.connect("store.db")
@@ -42,18 +51,6 @@ class ServerProtocol(Protocol):
         self.db.close()
         self.factory.numProtocols -= 1
         print(f"[-] Connection lost. Active: {self.factory.numProtocols}")
-
-    def asymmetric_decryption(self, payload, key):
-        return payload  # Placeholder for real decryption logic
-
-    def symmetric_decryption(self, payload, key):
-        return payload  # Placeholder
-
-    def symmetric_encryption(self, payload, key):
-        return payload  # Placeholder
-
-    def asymmetric_encryption(self, payload, key):
-        return payload  # Placeholder
 
     def send_error(self, message_str, state=ProtocolState.PRE_AUTH):
         self.error_count += 1
@@ -91,14 +88,13 @@ class ServerProtocol(Protocol):
 
         elif self.state_dict[PacketType.CS_AUTH] == 0:
             self.send_error("Already authenticated", state=ProtocolState.POST_AUTH)
-
         else:
-            if message.payload.seq >= self.state_dict[PacketType.CS_AUTH] and \
-               message.payload.seq <= self.state_dict_threshold[PacketType.CS_AUTH]:
+            if message.payload.seq >= self.state_dict[PacketType.CS_AUTH] :
                 self.send_error("Invalid sequence number", state=ProtocolState.PRE_AUTH)
                 return
         match message.payload.seq : 
-            
+            case 1:
+                return
             case _:
                 self.send_error("Unknown sequence step", state=ProtocolState.PRE_AUTH)
                 return
