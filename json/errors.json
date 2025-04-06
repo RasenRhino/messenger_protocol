@@ -1,18 +1,26 @@
 {
     "errors": {
-        "pre-auth": {
+        {
+          "metadata": {
             "packet_type": "error",
-            "paylaod": {
+            "state" : "pre-auth"
+        },
+        "payload": {
                 "message": "Shit happened",
                 "nonce": "N1",
                 "signature": "Sig(message||nonce)"
             } 
         },
-        "post-auth": {
-            "paylaod": {
-                "packet_type": "error",
-                "message": "Shit happened"
-            }
-        }
+        {
+            "metadata": {
+              "packet_type": "error",
+              "state" : "post_auth"
+        },
+          "payload": {
+                  "message": "Shit happened",
+                  "nonce": "N1",
+                  "signature": "Sig(message||nonce)"
+              } 
+          }, 
     }
 }
