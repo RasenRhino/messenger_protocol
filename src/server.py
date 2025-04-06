@@ -1,4 +1,5 @@
 from server_models import Metadata, Payload, Message
+from server_constants import PacketType, ProtocolState
 from twisted.internet.protocol import Factory, Protocol
 from twisted.internet import reactor
 import sqlite3, json
@@ -6,17 +7,30 @@ from dataclasses import asdict
 
 MAX_ERRORS = 3
 
-def parse_message(data: dict) -> Message:
+
+def parse_message(data: dict, decrypt_fn=None, key=None) -> Message:
     metadata = Metadata(**data['metadata'])
-    payload = Payload(**data['payload'])
+    payload_data = data['payload']
+    if decrypt_fn:
+        payload_data = decrypt_fn(payload_data, key)
+    payload = Payload(**payload_data)
     return Message(metadata=metadata, payload=payload)
+
+
+def strip_none(obj):
+    if isinstance(obj, dict):
+        return {k: strip_none(v) for k, v in obj.items() if v is not None}
+    elif isinstance(obj, list):
+        return [strip_none(v) for v in obj if v is not None]
+    return obj
 
 
 class ServerProtocol(Protocol):
     def __init__(self):
         super().__init__()
         self.state_dict = {}
-        self.error_count = 0  # Track number of protocol-level errors
+        self.error_count = 0
+        self.state_dict_threshold = {PacketType.CS_AUTH: 5}
 
     def connectionMade(self):
         self.db = sqlite3.connect("store.db")
@@ -29,21 +43,29 @@ class ServerProtocol(Protocol):
         self.factory.numProtocols -= 1
         print(f"[-] Connection lost. Active: {self.factory.numProtocols}")
 
-    def asymmetric_decryption(self, payload, private_key):  # Placeholder
-        return payload
+    def asymmetric_decryption(self, payload, key):
+        return payload  # Placeholder for real decryption logic
 
-    def send_error(self, message_str, state="pre-auth"):
-        """Unified error response + error count tracking"""
+    def symmetric_decryption(self, payload, key):
+        return payload  # Placeholder
+
+    def symmetric_encryption(self, payload, key):
+        return payload  # Placeholder
+
+    def asymmetric_encryption(self, payload, key):
+        return payload  # Placeholder
+
+    def send_error(self, message_str, state=ProtocolState.PRE_AUTH):
         self.error_count += 1
-
         error_msg = Message(
-            metadata=Metadata(packet_type="error", state=state),
+            metadata=Metadata(packet_type=PacketType.ERROR, state=state),
             payload=Payload(
                 message=message_str,
-                signature="Sig(message||nonce)"  # Placeholder, static for now
+                signature="Sig(message||nonce)"  # Placeholder
             )
         )
-        response = {"errors": {str(self.error_count): asdict(error_msg)}}
+        cleaned = strip_none(asdict(error_msg))
+        response = {"errors": {str(self.error_count): cleaned}}
         self.transport.write(json.dumps(response).encode('utf-8'))
 
         if self.error_count >= MAX_ERRORS:
@@ -51,43 +73,50 @@ class ServerProtocol(Protocol):
             self.transport.loseConnection()
 
     def cs_auth_handler(self, data):
-        if 'cs_auth' not in self.state_dict:
-            try:
-                decrypted_payload = self.asymmetric_decryption(data['payload'], self.factory.private_key)
-                message = Message(
-                    metadata=Metadata(**data['metadata']),
-                    payload=Payload(**decrypted_payload)
-                )
+        try:
+            print(data, flush=True)
+            message = parse_message(data, decrypt_fn=self.asymmetric_decryption, key=self.factory.private_key)
+            print(message)
+        except Exception as e:
+            print({e})
+            print("error here")
+            self.send_error("Invalid message format", state=ProtocolState.PRE_AUTH)
+            return
 
-                if message.payload.seq != 1:
-                    self.send_error("Invalid sequence number", state="pre-auth")
-                    return
+        if PacketType.CS_AUTH not in self.state_dict:
+            if message.payload.seq != 1:
+                self.send_error("Invalid sequence number", state=ProtocolState.PRE_AUTH)
+                return
+            self.state_dict[PacketType.CS_AUTH] = 1
 
-                self.state_dict['cs_auth'] = {
-                    "username": message.payload.username,
-                    "nonce": message.payload.nonce,
-                    "dh_contribution": message.payload.dh_contribution
-                }
-                success = {
-                    "status": "success",
-                    "msg": "cs_auth successful"
-                }
-                self.transport.write(json.dumps(success).encode('utf-8'))
+        elif self.state_dict[PacketType.CS_AUTH] == 0:
+            self.send_error("Already authenticated", state=ProtocolState.POST_AUTH)
 
-            except Exception:
-                self.send_error("Invalid message format", state="pre-auth")
+        else:
+            if message.payload.seq >= self.state_dict[PacketType.CS_AUTH] and \
+               message.payload.seq <= self.state_dict_threshold[PacketType.CS_AUTH]:
+                self.send_error("Invalid sequence number", state=ProtocolState.PRE_AUTH)
+                return
+        match message.payload.seq : 
+            
+            case _:
+                self.send_error("Unknown sequence step", state=ProtocolState.PRE_AUTH)
+                return
+
+
+        print(f"Received valid cs_auth packet seq={message.payload.seq}")
 
     def dataReceived(self, data):
         try:
             request = json.loads(data.decode('utf-8'))
-
-            if request['metadata']['packet_type'] == 'cs_auth':
+            if request['metadata']['packet_type'] == PacketType.CS_AUTH:
                 self.cs_auth_handler(request)
             else:
-                self.send_error("Unsupported packet_type", state="pre-auth")
+                self.send_error("Unsupported packet_type", state=ProtocolState.PRE_AUTH)
 
-        except Exception:
-            self.send_error("Malformed JSON or bad structure", state="pre-auth")
+        except Exception as e:
+            print("[Exception]:", str(e))
+            self.send_error("Malformed JSON or bad structure", state=ProtocolState.PRE_AUTH)
 
 
 class ServerFactory(Factory):

@@ -1,10 +1,13 @@
+# server_models.py
+
 from dataclasses import dataclass
 from typing import Optional
+from server_constants import PacketType, ProtocolState
 
 @dataclass
 class Metadata:
-    packet_type: str
-    state: Optional[str] = None  # "pre-auth", "post_auth", etc.
+    packet_type: PacketType
+    state: Optional[ProtocolState] = None
     salt: Optional[str] = None
     dh_contribution: Optional[int] = None
     iv: Optional[str] = None
@@ -15,6 +18,7 @@ class Payload:
     seq: Optional[int] = None
     username: Optional[str] = None
     nonce: Optional[str] = None
+    dh_contribution: Optional[int] = None  # ✅ Add this line
     server_challenge: Optional[str] = None
     server_challenge_solution: Optional[str] = None
     client_challenge: Optional[str] = None
