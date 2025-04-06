@@ -1,0 +1,31 @@
+{
+    "messages": {
+        "1": {
+            "payload": {
+                "packet_type": "logout",
+                "seq": 1
+            }
+        },
+        "2": {
+            "payload": {
+                "packet_type": "logout",
+                "seq": 2,
+                "server_challenge": "c1"
+            }
+        },
+        "3": {
+            "payload": {
+                "packet_type": "logout",
+                "seq": 3,
+                "server_challenge_solution": "sha3(c1)"
+            }
+        },
+        "4": {
+            "payload": {
+                "packet_type": "logout",
+                "seq": 4,
+                "message": "Logout Successful"
+            }
+        }
+    }
+}

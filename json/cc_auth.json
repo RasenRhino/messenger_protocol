@@ -1,0 +1,54 @@
+{
+    "messages": {
+        "1": {
+            "metadata": {
+                "packet_type": "cc_auth",
+                "dh_contribution": 4444,
+                "signature_dh_contribution": "Sig(DH)"
+            },
+            "payload": {
+                "seq": 1,
+                "sender_username": "Alice"
+            }
+        },
+        "2": {
+            "metadata": {
+                "packet_type": "cc_auth",
+                "dh_contribution": 4444,
+                "iv": "iv",
+                "tag": "tag",
+                "signature_dh_contribution": "Sig(DH)"
+            },
+            "payload": {
+                "seq": 2,
+                "recipient_username": "Bob",
+                "recipient_challenge": "c1"
+            }
+        },
+        "3": {
+            "metadata": {
+                "packet_type": "cc_auth",
+                "iv": "iv",
+                "tag": "tag"
+            },
+            "payload": {
+                "seq": 3,
+                "recipient_challenge_solution": "sha3(c1)",
+                "sender_challenge": "c2"
+            } 
+        },
+        "4": {
+            "metadata": {
+                "packet_type": "cc_auth",
+                "iv": "iv",
+                "tag": "tag"
+            },
+            "payload": {
+                "seq": 4,
+                "sender_challenge_solution": "sha3(c2)"
+            } 
+        }
+    }
+}
+
+

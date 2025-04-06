@@ -1,0 +1,23 @@
+{
+    "messages": {
+        "1": {
+            "payload": {
+                "packet_type": "message",
+                "seq": 1,
+                "recipient": "Bob",
+                "nonce": "N1"
+            }
+        },
+        "2": {
+            "payload": {
+                "packet_type": "message",
+                "seq": 2,
+                "recipient": "Bob",
+                "nonce": "N1",
+                "encryption_public_key": "epk",
+                "signature_verification_public_key": "spk",
+                "listening_ip": "IP"
+            }
+        }
+    }
+}

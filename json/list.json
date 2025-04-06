@@ -1,0 +1,19 @@
+{
+    "messages": {
+        "1": {
+            "payload": {
+                "packet_type": "list",
+                "seq": 1,
+                "nonce": "N1"
+            }
+        },
+        "2": {
+            "payload": {
+                "packet_type": "list",
+                "seq": 2,
+                "nonce": "N1",
+                "signed_in_users": ["Alice", "Bob"]
+            }
+        }
+    }
+}

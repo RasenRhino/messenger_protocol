@@ -1,0 +1,22 @@
+{
+    "messages": {
+        "1": {
+            "paylaod": {
+                "packet_type": "identity_verification",
+                "seq": 1,
+                "sender_username": "Alice",
+                "nonce": "N2"
+            }
+        },
+        "2": {
+            "payload": {
+                "packet_type": "identity_verification",
+                "seq": 2,
+                "sender_username": "Alice",
+                "nonce": "N2",
+                "encryption_public_key": "epk",
+                "signature_verification_public_key": "spk"
+            }
+        }
+    }
+}

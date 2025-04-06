@@ -1,0 +1,68 @@
+{
+    "messages": {
+        "1": {
+            "metadata": {
+                "packet_type": "cs_auth"
+            },
+            "payload": {
+                "seq": 1,
+                "username": "Alice",
+                "dh_contribution": 4444,
+                "nonce": "N1"
+            }
+        },
+        "2": {
+            "metadata": {
+                "packet_type": "cs_auth",
+                "salt": "salt",
+                "dh_contribution": 4444,
+                "iv": "iv",
+                "tag": "tag"
+            },
+            "payload": {
+                "seq": 2,
+                "server_challenge": "c1",
+                "nonce": "N1"
+            }
+        },
+        "3": {
+            "metadata": {
+                "packet_type": "cs_auth",
+                "iv": "iv",
+                "tag": "tag"
+            },
+            "payload": {
+                "seq": 3,
+                "server_challenge_solution": "sha3(c1)",
+                "client_challenge": "c2"
+            } 
+        },
+        "4": {
+            "metadata": {
+                "packet_type": "cs_auth",
+                "iv": "iv",
+                "tag": "tag"
+            },
+            "payload": {
+                "seq": 4,
+                "client_challenge_solution": "Hash(c2)"
+            } 
+        },
+        "5": {
+            "metadata": {
+                "packet_type": "cs_auth",
+                "iv": "iv",
+                "tag": "tag"
+            },
+            "payload": {
+                "seq": 5,
+                "username": "Alice",
+                "encryption_public_key": "epk",
+                "signature_verification_public_key": "spk",
+                "listening_ip": "IP"
+            } 
+        }
+    }
+}
+
+
