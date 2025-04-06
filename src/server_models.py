@@ -1,8 +1,10 @@
 from dataclasses import dataclass
 from typing import Optional
+
 @dataclass
 class Metadata:
     packet_type: str
+    state: Optional[str] = None  # "pre-auth", "post_auth", etc.
     salt: Optional[str] = None
     dh_contribution: Optional[int] = None
     iv: Optional[str] = None
@@ -10,7 +12,7 @@ class Metadata:
 
 @dataclass
 class Payload:
-    seq: int
+    seq: Optional[int] = None
     username: Optional[str] = None
     nonce: Optional[str] = None
     server_challenge: Optional[str] = None
@@ -20,17 +22,10 @@ class Payload:
     encryption_public_key: Optional[str] = None
     signature_verification_public_key: Optional[str] = None
     listening_ip: Optional[str] = None
+    message: Optional[str] = None
+    signature: Optional[str] = None
 
 @dataclass
 class Message:
     metadata: Metadata
     payload: Payload
-
-@dataclass
-class ErrorPreAuth:
-    packet_type: str
-    message: str
-
-@dataclass
-class ErrorPostAuth:
-    payload: str 
