@@ -6,15 +6,19 @@ import sqlite3, json
 from dataclasses import asdict
 from crypto_utils.core import (
     asymmetric_decryption,
+    load_public_key,
     symmetric_decryption,
     symmetric_encryption,
     asymmetric_encryption,
     generate_dh_contribution,
     generate_symmetric_key,
+    load_private_key
 )
+import sys
 
 MAX_ERRORS = 3
-
+PRIVATE_KEY_ENCRYPTION = "encryption_keys/private_key_encryption.pem"
+PUBLIC_KEY_ENCRYPTION = "encryption_keys/public_key_encryption.pem" 
 #sql db schema 
 # username:key:salt
 
@@ -23,6 +27,7 @@ def parse_message(data: dict, decrypt_fn=None, key=None) -> Message:
     payload_data = data['payload']
     if decrypt_fn:
         payload_data = decrypt_fn(payload_data, key)
+    print(payload_data)
     payload = Payload(**payload_data)
     return Message(metadata=metadata, payload=payload)
 
@@ -95,6 +100,10 @@ class ServerProtocol(Protocol):
         match message.payload.seq : 
             case 1:
                 return
+            case 3:
+                return
+            case 5:
+                return
             case _:
                 self.send_error("Unknown sequence step", state=ProtocolState.PRE_AUTH)
                 return
@@ -120,8 +129,12 @@ class ServerFactory(Factory):
 
     def __init__(self):
         self.numProtocols = 0
-        self.private_key = 1234  # Placeholder
-        self.public_key = 1234
+        try:
+            self.private_key_encryption = load_private_key("encryption_keys/private_key_encryption.pem")
+            self.public_key_encryption = load_public_key("encryption_keys/public_key_encryption.pem")
+        except (FileNotFoundError, ValueError, TypeError) as e:
+            print(f"[!] Key loading failed: {e}")
+            sys.exit(1)  
 
 
 def init_db():
