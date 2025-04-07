@@ -122,7 +122,7 @@ class ServerProtocol(Protocol):
         elif self.state_dict[PacketType.CS_AUTH.value] == 0:
             self.send_error("Already authenticated", state=ProtocolState.POST_AUTH)
         else:
-            if message.payload.seq <= self.state_dict[PacketType.CS_AUTH.value] and message.payload.seq > self.state_dict[PacketType.CS_AUTH.value]+1:
+            if message.payload.seq <= self.state_dict[PacketType.CS_AUTH.value] or message.payload.seq > self.state_dict[PacketType.CS_AUTH.value]+1:
                 self.send_error("Invalid sequence number", state=ProtocolState.PRE_AUTH.value)
                 return
 
@@ -140,12 +140,12 @@ class ServerProtocol(Protocol):
                         ## Ritik : do all symmetric key bhang bhosda here, use these values. use the hashed password only
 
                         self.symmetric_key = generate_symmetric_key(g,p,hashed_key)
-                        server_nonce = secrets.token_hex(16)  
+                        server_challenge = secrets.token_hex(16)  
                         self.cs_auth_state['2']={}
-                        self.cs_auth_state['2']['server_challenge']=server_nonce
+                        self.cs_auth_state['2']['server_challenge']=server_challenge
                         payload={
                             "seq":2,
-                            "server_challenge": server_nonce,
+                            "server_challenge": server_challenge,
                             "nonce": SHA3_512(message.payload.nonce)
                         }
                         payload=json.dumps(payload)
