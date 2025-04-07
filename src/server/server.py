@@ -41,7 +41,7 @@ def parse_message(data: dict, decrypt_fn=None, key=None, **kwargs) -> Message:
         encrypted_payload = base64.b64decode(data['payload']['cipher_text'])
         iv = base64.b64decode(data['metadata']['iv'])
         tag = base64.b64decode(data['metadata']['tag'])
-        aad = base64.b64decode(data['metadata']['packet_type'])
+        aad = data['metadata']['packet_type'].encode('utf-8')
         decrypted_bytes = decrypt_fn(key, encrypted_payload, iv, tag, aad)
         payload_data = json.loads(decrypted_bytes.decode('utf-8'))
     elif decrypt_fn == asymmetric_decryption:
@@ -96,19 +96,11 @@ class ServerProtocol(Protocol):
             self.transport.loseConnection()
 
     def cs_auth_handler(self, data):
-        print(data)
-        print("dicttt :::")
-        print(self.state_dict)
-        print(PacketType.CS_AUTH.value)
         try:
             if(PacketType.CS_AUTH.value not in self.state_dict.keys()):
                 message = parse_message(data, decrypt_fn=asymmetric_decryption, key=self.factory.private_key)
             else:
-                print("in else")
-                print(data)
                 message = parse_message(data,decrypt_fn=symmetric_decryption,key=self.symmetric_key)
-                print("reached")
-                print(message)
         except Exception as e:
             print(f"Exception at cs_auth_handler : {e}")
             self.send_error("Invalid message format", state=ProtocolState.PRE_AUTH.value)
@@ -149,7 +141,6 @@ class ServerProtocol(Protocol):
                             "server_challenge": server_nonce,
                             "nonce": message.payload.nonce
                         }
-                        print(message.payload.nonce)
                         payload=json.dumps(payload)
                         cipher_text=symmetric_encryption(self.symmetric_key,payload,message.metadata.packet_type)
                         response_message = Message(
@@ -189,12 +180,12 @@ class ServerProtocol(Protocol):
                             }
                     payload=json.dumps(payload)
                     cipher_text=symmetric_encryption(self.symmetric_key,payload,message.metadata.packet_type)
-                    response_message= Message(
+                    response_message = Message(
                         metadata=Metadata(
                             packet_type=PacketType.CS_AUTH.value,
                             iv=cipher_text['iv'],
-                            tag=cipher_text['tag']
-                        )
+                            tag=cipher_text['tag'],
+                        ),
                         payload=Payload(
                             cipher_text=cipher_text['cipher_text']
                         )

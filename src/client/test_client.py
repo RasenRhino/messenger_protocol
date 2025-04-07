@@ -56,7 +56,7 @@ time.sleep(1)
 cipher_text=base64.b64decode(response['payload']['cipher_text'])
 iv=base64.b64decode(response['metadata']['iv'])
 tag=base64.b64decode(response['metadata']['tag']) 
-aad=base64.b64decode(response['metadata']['packet_type'])
+aad = response['metadata']['packet_type'].encode('utf-8')
 key=generate_symmetric_key(123,123,123)
 plain_text=symmetric_decryption(key,cipher_text,iv,tag,aad)
 recieved_payload=json.loads(plain_text.decode('utf-8'))
@@ -81,7 +81,6 @@ data2 = {
         "packet_type": "cs_auth",
         "iv" : cipher_text['iv'],
         "tag" : cipher_text['tag'],
-        "associated_data" : cipher_text['AAD']
     },
     "payload": {
         "cipher_text" : cipher_text['cipher_text']
