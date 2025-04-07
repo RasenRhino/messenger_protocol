@@ -15,7 +15,7 @@ PORT = 9000
 # Generate nonce
 nonce1 = secrets.token_hex(16)
 nonce2 = secrets.token_hex(16)
-
+nonce_message = secrets.token_hex(16)
 
 # Prepare data with nonce
 data = {
@@ -124,6 +124,13 @@ data3 = {
 }
 try:
     s.sendall(json.dumps(data3).encode('utf-8'))
-    response = s.recv(4096)
 except Exception as e:
     print(e)
+
+time.sleep(1)
+payload_message1={
+                "packet_type": "message",
+                "seq": 1,
+                "recipient": "Bob",
+                "nonce":SHA3_512(nonce_message) 
+            }
