@@ -12,7 +12,6 @@ class Metadata:
     dh_contribution: Optional[int] = None
     iv: Optional[str] = None
     tag: Optional[str] = None
-    associated_data : Optional[str] = None
 @dataclass
 class Payload:
     seq: Optional[int] = None

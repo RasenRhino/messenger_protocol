@@ -48,7 +48,10 @@ def asymmetric_decryption(private_key, ciphertext: bytes) -> bytes:
     return plaintext
 
 
-
+def SHA3_512(data:str):
+    digest = hashes.Hash(hashes.SHA3_512())
+    digest.update(data.encode('utf-8'))
+    return base64.b64encode(digest.finalize()).decode('utf-8')
 def symmetric_decryption(key: bytes, payload:bytes ,iv:bytes, tag: bytes, aad: bytes) -> bytes:
     """
     Decrypt AES-GCM encrypted data.
@@ -61,6 +64,7 @@ def symmetric_decryption(key: bytes, payload:bytes ,iv:bytes, tag: bytes, aad: b
     """
     cipher = Cipher(algorithms.AES(key), modes.GCM(iv, tag))
     decryptor = cipher.decryptor()
+    #pls validate aad==packet_type in client side code
     decryptor.authenticate_additional_data(aad)
     # Perform decryption
     plaintext = decryptor.update(payload) + decryptor.finalize()
