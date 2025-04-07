@@ -1,3 +1,4 @@
+import string
 from server_models import Metadata, Payload, Message, User
 from server_constants import PacketType, ProtocolState
 from twisted.internet.protocol import Factory, Protocol
@@ -73,14 +74,15 @@ class ServerProtocol(Protocol):
         self.factory.numProtocols -= 1
         self.state_dict={}
         self.cs_auth_state = {}
-
+        ## add a feild for final state of all state_dict entires. automatically set them to 0 when final state achieved
         if(self.username != None and (self.username in self.factory.userlist)):
            del self.factory.userlist[self.username] 
         self.username = None
         print(f"[-] Connection lost. Active: {self.factory.numProtocols}")
 
     def send_error(self, message_str, state):
-        self.error_count += 1
+        if (state == ProtocolState.POST_AUTH.value):
+            self.error_count += 1
         error_msg = Message(
             metadata=Metadata(packet_type=PacketType.ERROR, state=state),
             payload=Payload(
@@ -205,9 +207,9 @@ class ServerProtocol(Protocol):
                     return
  
             case 5:
+                #check if the payload has the required key-value pairs or not
                 try:
-                    ip,port=message.payload.listening_ip.split(":")
-                    self.factory.add_user_to_userlist(message.payload.username,message.payload.encryption_public_key,message.payload.signature_verification_public_key,ip,int(port))
+                    self.factory.add_user_to_userlist(message.payload.username,message.payload.encryption_public_key,message.payload.signature_verification_public_key,message.payload.listening_ip)
                     #should we add any authentication messsage confirmation ?? 
                     self.state_dict[PacketType.CS_AUTH.value]=0 # 0 means authentication successful
                     print(self.factory.userlist)
@@ -218,16 +220,83 @@ class ServerProtocol(Protocol):
                     
                 return
             case _:
-                self.send_error("Unknown sequence step", state=PacketType.CS_AUTH.value)
+                self.send_error("Unknown sequence step", state=ProtocolState.PRE_AUTH.value)
                 return
 
         print(f"Received valid cs_auth packet seq={message.payload.seq}")
+    def message_handler(self,data):
+        if((PacketType.CS_AUTH.value not in self.state_dict.keys()) or (self.state_dict[PacketType.CS_AUTH.value]!=0)):
+            self.send_error("Not Authenticated", state=ProtocolState.POST_AUTH.value)
+            return
+        try:
+            message = parse_message(data, decrypt_fn=symmetric_encryption, key=self.symmetric_key)
+        except Exception as e:
+            print(f"Exception at message handler: {e}")
+            self.send_error("Invalid message format", state=ProtocolState.POST_AUTH.value)
+            return
 
+        if PacketType.MESSAGE.value not in self.state_dict:
+            if message.payload.seq != 1:
+                self.send_error("Invalid sequence number", state=ProtocolState.POST_AUTH.value)
+                return
+            self.state_dict[PacketType.MESSAGE.value] = 1
+
+        else:
+            if message.payload.seq <= self.state_dict[PacketType.CS_AUTH.value] and message.payload.seq > self.state_dict[PacketType.CS_AUTH.value]+1:
+                self.send_error("Invalid sequence number", state=ProtocolState.POST_AUTH.value)
+                return
+        if (message.payload.recipient not in self.factory.userlist.keys()):
+            self.send_error("Recipient could not be found", state=ProtocolState.POST_AUTH.value)
+        match message.payload.seq:
+            case 1:
+                recipient=message.payload.recipient
+                encryption_public_key = self.factory.userlist[recipient][encryption_public_key] 
+                signature_verification_public_key=self.factory.userlist[recipient][signature_verification_public_key]
+                listening_ip=self.factory.userlist[recipient][listening_ip]
+                payload={
+                    "packet_type":"message",
+                    "seq":2,
+                    "recipient":message.payload.recipient,
+                    "nonce":SHA3_512(message.payload.nonce),
+                    "encryption_public_key":encryption_public_key,
+                    "signature_verification_public_key":signature_verification_public_key,
+                    "listening_ip":listening_ip
+                } 
+                payload=json.dumps(payload) 
+                cipher_text=symmetric_encryption(self.symmetric_key,payload,message.payload.packet_type)
+                response_message=Message(
+                    Payload(
+                        cipher_text=cipher_text['cipher_text']
+                    )
+                ) 
+                response = message_to_dict(response_message)
+                self.transport.write(json.dumps(response).encode('utf-8'))
+                del self.state_dict[PacketType.MESSAGE.value]
+                return
+            case _:
+                self.send_error("Unknown sequence step", state=ProtocolState.POST_AUTH.value)
+                return 
+    def list_handler(self,data):
+        return
+    def logout_handler():
+        return
+    def error_message_hanlder(self,data): #do we need a error handler , i mean yes, but do we?
+        return
     def dataReceived(self, data):
         try:
             request = json.loads(data.decode('utf-8'))
-            if request['metadata']['packet_type'] == PacketType.CS_AUTH.value:
+            packet_type=request['metadata']['packet_type']
+            if packet_type == PacketType.CS_AUTH.value:
                 self.cs_auth_handler(request)
+            elif packet_type == PacketType.MESSAGE.value:
+                self.message_handler(request)
+            elif packet_type == PacketType.LIST.value:
+                self.list_handler(request)
+            elif packet_type == PacketType.LOGOUT.value:
+                self.logout_handler()
+            elif packet_type == PacketType.ERROR.value:
+                self.error_message_hanlder(request)
+            
             else:
                 self.send_error("Unsupported packet_type", state=PacketType.CS_AUTH.value)
 
@@ -241,6 +310,18 @@ class ServerFactory(Factory):
     def __init__(self):
         self.numProtocols = 0
         self.userlist={}
+        # Add dummy user "Bob" with random keys and address
+        random_enc_key = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
+        random_sign_key = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
+        random_ip = f"192.168.1.{secrets.randbelow(255)}:{secrets.randbelow(10000)+10000}"
+
+        self.add_user_to_userlist(
+            username="Bob",
+            enc_key=random_enc_key,
+            sign_key=random_sign_key,
+            address=random_ip
+        )
+
         try:
             self.private_key = load_private_key(PRIVATE_KEY_ENCRYPTION)
             self.public_key_encryption = load_public_key(PUBLIC_KEY_ENCRYPTION)
@@ -252,7 +333,7 @@ class ServerFactory(Factory):
         except Exception as e:
             print(f"Couldn't get public params {e}")
             sys.exit(1)
-    def add_user_to_userlist(self, username:str, enc_key:str, sign_key:str, ip:str, port:int):
+    def add_user_to_userlist(self, username:str, enc_key:str, sign_key:str, address:str):
         """
         Adds a user to the userlist with their encryption/signing keys and network details.
 
@@ -267,8 +348,7 @@ class ServerFactory(Factory):
         username=username,
         encryption_public_key=enc_key,
         signing_public_key=sign_key,
-        ip=ip,
-        port=port
+        address=address,
         )
 
 

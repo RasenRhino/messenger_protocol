@@ -9,8 +9,7 @@ class User:
     username: str
     encryption_public_key: str
     signing_public_key: str
-    ip: str
-    port: int
+    address: str
 
 @dataclass
 class Metadata:
@@ -36,8 +35,10 @@ class Payload:
     message: Optional[str] = None
     signature: Optional[str] = None
     cipher_text: Optional[str] = None
+    recipient : Optional[str] = None
+    packet_type: Optional[PacketType] = None
 
 @dataclass
 class Message:
-    metadata: Metadata
-    payload: Payload
+    metadata: Optional[Metadata] = None
+    payload: Payload = None
