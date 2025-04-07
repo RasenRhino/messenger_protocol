@@ -5,6 +5,14 @@ from typing import Optional
 from server_constants import PacketType, ProtocolState
 
 @dataclass
+class User:
+    username: str
+    encryption_public_key: str
+    signing_public_key: str
+    ip: str
+    port: int
+
+@dataclass
 class Metadata:
     packet_type: PacketType
     state: Optional[ProtocolState] = None

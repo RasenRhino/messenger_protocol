@@ -1,4 +1,4 @@
-from server_models import Metadata, Payload, Message
+from server_models import Metadata, Payload, Message, User
 from server_constants import PacketType, ProtocolState
 from twisted.internet.protocol import Factory, Protocol
 from twisted.internet import reactor
@@ -62,15 +62,21 @@ class ServerProtocol(Protocol):
         self.error_count = 0
         self.symmetric_key=None
         self.cs_auth_state={}
+        self.username=None
     def connectionMade(self):
         self.db = sqlite3.connect("store.db")
         self.cursor = self.db.cursor()
         self.factory.numProtocols += 1
         print(f"[+] New connection. Active: {self.factory.numProtocols}")
-
     def connectionLost(self, reason):
         self.db.close()
         self.factory.numProtocols -= 1
+        self.state_dict={}
+        self.cs_auth_state = {}
+
+        if(self.username != None and (self.username in self.factory.userlist)):
+           del self.factory.userlist[self.username] 
+        self.username = None
         print(f"[-] Connection lost. Active: {self.factory.numProtocols}")
 
     def send_error(self, message_str, state):
@@ -87,8 +93,6 @@ class ServerProtocol(Protocol):
         response = {"errors": {str(self.error_count): cleaned}}
         self.transport.write(json.dumps(response).encode('utf-8'))
         if (self.error_count >= MAX_ERRORS or state==ProtocolState.PRE_AUTH.value):
-            self.state_dict={}
-            self.cs_auth_state = {}
             if(state!=ProtocolState.PRE_AUTH.value):
                 print(f"[!] Too many errors. Closing connection.")
             else:
@@ -111,6 +115,7 @@ class ServerProtocol(Protocol):
                 self.send_error("Invalid sequence number", state=ProtocolState.PRE_AUTH.value)
                 return
             self.state_dict[PacketType.CS_AUTH.value] = 1
+            self.username = message.payload.username
 
         elif self.state_dict[PacketType.CS_AUTH.value] == 0:
             self.send_error("Already authenticated", state=ProtocolState.POST_AUTH)
@@ -139,7 +144,7 @@ class ServerProtocol(Protocol):
                         payload={
                             "seq":2,
                             "server_challenge": server_nonce,
-                            "nonce": message.payload.nonce
+                            "nonce": SHA3_512(message.payload.nonce)
                         }
                         payload=json.dumps(payload)
                         cipher_text=symmetric_encryption(self.symmetric_key,payload,message.metadata.packet_type)
@@ -175,7 +180,7 @@ class ServerProtocol(Protocol):
                     
                     client_challenge_solution=SHA3_512(message.payload.client_challenge)
                     payload={
-                                "seq":2,
+                                "seq":4,
                                 "client_challenge_solution":client_challenge_solution
                             }
                     payload=json.dumps(payload)
@@ -200,6 +205,17 @@ class ServerProtocol(Protocol):
                     return
  
             case 5:
+                try:
+                    ip,port=message.payload.listening_ip.split(":")
+                    self.factory.add_user_to_userlist(message.payload.username,message.payload.encryption_public_key,message.payload.signature_verification_public_key,ip,int(port))
+                    #should we add any authentication messsage confirmation ?? 
+                    self.state_dict[PacketType.CS_AUTH.value]=0 # 0 means authentication successful
+                    print(self.factory.userlist)
+                    return
+                except Exception as e:
+                    print(f"[ERROR] in case 5 of cs_auth_handler : {e} ")
+                    self.send_error("Something went wrong while authenting",state=ProtocolState.PRE_AUTH.value)
+                    
                 return
             case _:
                 self.send_error("Unknown sequence step", state=PacketType.CS_AUTH.value)
@@ -222,13 +238,12 @@ class ServerProtocol(Protocol):
 
 class ServerFactory(Factory):
     protocol = ServerProtocol
-
     def __init__(self):
         self.numProtocols = 0
+        self.userlist={}
         try:
             self.private_key = load_private_key(PRIVATE_KEY_ENCRYPTION)
             self.public_key_encryption = load_public_key(PUBLIC_KEY_ENCRYPTION)
-            
         except Exception as e:
             print(f"[!] Key loading failed: {e}")
             sys.exit(1)
@@ -237,6 +252,24 @@ class ServerFactory(Factory):
         except Exception as e:
             print(f"Couldn't get public params {e}")
             sys.exit(1)
+    def add_user_to_userlist(self, username:str, enc_key:str, sign_key:str, ip:str, port:int):
+        """
+        Adds a user to the userlist with their encryption/signing keys and network details.
+
+        Parameters:
+        username (str): The unique identifier for the user.
+        enc_key (str): The user's public key for encryption.
+        sign_key (str): The user's public key for signature verification.
+        ip (str): The user's IP address.
+        port (int): The port on which the user is listening.
+        """
+        self.userlist[username] = User(
+        username=username,
+        encryption_public_key=enc_key,
+        signing_public_key=sign_key,
+        ip=ip,
+        port=port
+        )
 
 
 def init_db():

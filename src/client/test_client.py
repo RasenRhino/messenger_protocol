@@ -60,7 +60,7 @@ aad = response['metadata']['packet_type'].encode('utf-8')
 key=generate_symmetric_key(123,123,123)
 plain_text=symmetric_decryption(key,cipher_text,iv,tag,aad)
 recieved_payload=json.loads(plain_text.decode('utf-8'))
-print(recieved_payload['nonce']==nonce1)
+print(recieved_payload['nonce']==SHA3_512(nonce1))
 # cipher_text=symmetric_encryption(key,json.dumps(recieved_payload))
                                 # iv=cipher_text['iv'],
                                 # tag=cipher_text['tag'],
@@ -90,6 +90,40 @@ data2 = {
 try:
     s.sendall(json.dumps(data2).encode('utf-8'))
     response = s.recv(4096)
-    print(response)
+except Exception as e:
+    print(e)
+response=json.loads(response.decode('utf-8'))
+cipher_text=base64.b64decode(response['payload']['cipher_text'])
+iv=base64.b64decode(response['metadata']['iv'])
+tag=base64.b64decode(response['metadata']['tag']) 
+aad = response['metadata']['packet_type'].encode('utf-8')
+
+plain_text=symmetric_decryption(key,cipher_text,iv,tag,aad)
+recieved_payload=json.loads(plain_text.decode('utf-8'))
+nonce2=SHA3_512(nonce2)
+print(recieved_payload['client_challenge_solution']==nonce2)
+print(recieved_payload)
+
+payload5 = {
+    "seq":5,
+    "username":"Alice",
+    "encryption_public_key": "epk",
+    "signature_verification_public_key": "spk",
+    "listening_ip":"127.0.0.1:3000"
+    }
+cipher_text = symmetric_encryption(key,json.dumps(payload5),aad_seq3)
+data3 = {
+    "metadata": {
+        "packet_type": "cs_auth",
+        "iv" : cipher_text['iv'],
+        "tag" : cipher_text['tag'],
+    },
+    "payload": {
+        "cipher_text" : cipher_text['cipher_text']
+    }
+}
+try:
+    s.sendall(json.dumps(data3).encode('utf-8'))
+    response = s.recv(4096)
 except Exception as e:
     print(e)
