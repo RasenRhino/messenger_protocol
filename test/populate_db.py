@@ -18,9 +18,9 @@ def generate_key():
     return ''.join(random.choices(string.digits, k=6))
 
 def hash_password_with_salt(password, salt):
-    digest = hashes.Hash(hashes.SHA3_256(), backend=default_backend())
+    digest = hashes.Hash(hashes.SHA3_512(), backend=default_backend())
     digest.update((password + salt).encode())
-    print((password + salt).encode())
+    print(f"Hashing: {(password + salt).encode()}")
     return digest.finalize().hex()
 
 def create_user_details(usernames):
@@ -69,11 +69,12 @@ def init_db(user_details):
     conn.commit()
     conn.close()
     print(f"Table '{TABLE_NAME}' overwritten and user data inserted into {DB_FILE}.")
+
 def main():
     usernames = ["Alice", "Bob", "Mallory"]
     create_user_details(usernames)
     user_details = load_user_details() 
-    print(user_details)
+    print(json.dumps(user_details, indent=4))
     init_db(user_details)
 
 if __name__ == "__main__":

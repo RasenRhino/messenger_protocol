@@ -12,13 +12,13 @@ class Metadata:
     dh_contribution: Optional[int] = None
     iv: Optional[str] = None
     tag: Optional[str] = None
-
+    associated_data : Optional[str] = None
 @dataclass
 class Payload:
     seq: Optional[int] = None
     username: Optional[str] = None
     nonce: Optional[str] = None
-    dh_contribution: Optional[int] = None  # ✅ Add this line
+    dh_contribution: Optional[int] = None  
     server_challenge: Optional[str] = None
     server_challenge_solution: Optional[str] = None
     client_challenge: Optional[str] = None
@@ -28,6 +28,7 @@ class Payload:
     listening_ip: Optional[str] = None
     message: Optional[str] = None
     signature: Optional[str] = None
+    cipher_text: Optional[str] = None
 
 @dataclass
 class Message:

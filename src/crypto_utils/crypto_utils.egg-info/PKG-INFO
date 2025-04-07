@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: crypto_utils
+Version: 0.1
+Summary: Shared cryptographic utilities for protocol implementation
+Author: Your Name
+Requires-Python: >=3.7
+Requires-Dist: cryptography
+Dynamic: author
+Dynamic: requires-dist
+Dynamic: requires-python
+Dynamic: summary
