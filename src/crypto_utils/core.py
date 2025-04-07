@@ -48,25 +48,58 @@ def asymmetric_decryption(private_key, ciphertext: bytes) -> bytes:
     return plaintext
 
 
-def symmetric_decryption(payload, key):
-    return payload  # Replace with real logic
 
-def symmetric_encryption(key:bytes,payload:str) ->  dict:
-    associated_data = os.urandom(3)
+def symmetric_decryption(key: bytes, payload:bytes ,iv:bytes, tag: bytes, aad: bytes) -> bytes:
+    """
+    Decrypt AES-GCM encrypted data.
+    :param key: The symmetric AES key.
+    :param payload: The ciphertext.
+    :param iv: Initialization vector (nonce) used during encryption.
+    :param tag: Authentication tag generated during encryption.
+    :param aad: Additional authenticated data used in encryption.
+    :return: Decrypted plaintext bytes.
+    """
+    cipher = Cipher(algorithms.AES(key), modes.GCM(iv, tag))
+    decryptor = cipher.decryptor()
+    decryptor.authenticate_additional_data(aad)
+    # Perform decryption
+    plaintext = decryptor.update(payload) + decryptor.finalize()
+    return plaintext
+def symmetric_encryption(key: bytes, payload: str, aad: str) -> dict:
+    """
+    Encrypts a plaintext payload using AES-GCM with the provided key and additional authenticated data (AAD).
+
+    Args:
+        key (bytes): A symmetric key for AES encryption. Should be 16, 24, or 32 bytes long.
+        payload (str): The plaintext message to encrypt.
+        aad (str): Additional Authenticated Data (AAD) to bind to the ciphertext. This data will not be encrypted,
+                   but any tampering will be detected upon decryption.
+                   'packet_type' is used as AAD.
+
+    Returns:
+        dict: A dictionary containing:
+            - 'cipher_text': The encrypted payload (base64-encoded).
+            - 'iv': The initialization vector used in encryption (base64-encoded).
+            - 'tag': The GCM authentication tag (base64-encoded).
+            - 'AAD': The original AAD, also base64-encoded for transmission/storage.
+    """
+    associated_data = aad.encode('utf-8')
     iv = os.urandom(12)
     cipher = Cipher(algorithms.AES(key), modes.GCM(iv))
     encryptor = cipher.encryptor()
     encryptor.authenticate_additional_data(associated_data)
-    payload=payload.encode('utf-8')
+
+    payload = payload.encode('utf-8')
     cipher_text = encryptor.update(payload) + encryptor.finalize()
     tag = encryptor.tag
-    print(cipher_text)
+
     return {
-        "cipher_text" : base64.b64encode(cipher_text).decode('utf-8'),
-        "iv" : base64.b64encode(iv).decode('utf-8'),
-        "tag" : base64.b64encode(tag).decode('utf-8'),
-        "AAD" : base64.b64encode(associated_data).decode('utf-8')
-    } 
+        "cipher_text": base64.b64encode(cipher_text).decode('utf-8'),
+        "iv": base64.b64encode(iv).decode('utf-8'),
+        "tag": base64.b64encode(tag).decode('utf-8'),
+        "AAD": base64.b64encode(associated_data).decode('utf-8')
+    }
+
 def asymmetric_encryption(public_key, message: bytes) -> bytes:
     """
     Encrypt a message using RSA OAEP with SHA-256.

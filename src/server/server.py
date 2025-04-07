@@ -45,10 +45,8 @@ def strip_none(obj):
 
 
 def parse_message(data: dict, decrypt_fn=None, key=None) -> Message:
-    print(data)
     metadata = Metadata(**data['metadata'])
     payload_data = data['payload']
-    print("in parse message")
     payload_data = base64.b64decode(payload_data)
     if decrypt_fn:
         payload_data = json.loads(decrypt_fn(key, payload_data).decode('utf-8'))
@@ -86,16 +84,13 @@ class ServerProtocol(Protocol):
         cleaned = message_to_dict(error_msg)
         response = {"errors": {str(self.error_count): cleaned}}
         self.transport.write(json.dumps(response).encode('utf-8'))
-
         if self.error_count >= MAX_ERRORS:
             print(f"[!] Too many errors. Closing connection.")
             self.transport.loseConnection()
 
     def cs_auth_handler(self, data):
         try:
-            print(data, flush=True)
             message = parse_message(data, decrypt_fn=asymmetric_decryption, key=self.factory.private_key)
-            print(message)
         except Exception as e:
             print(f"Exception at cs_auth_handler : {e}")
             self.send_error("Invalid message format", state=ProtocolState.PRE_AUTH)
@@ -137,8 +132,7 @@ class ServerProtocol(Protocol):
                             "nonce": message.payload.nonce
                         }
                         payload=json.dumps(payload)
-                        cipher_text=symmetric_encryption(self.symmetric_key,payload)
-                    #     salt = row
+                        cipher_text=symmetric_encryption(self.symmetric_key,payload,message.metadata.packet_type)
                         response_message = Message(
                             metadata=Metadata(
                                 packet_type=PacketType.CS_AUTH,
@@ -149,7 +143,7 @@ class ServerProtocol(Protocol):
                                 associated_data=cipher_text['AAD']
                             ),
                             payload=Payload(
-                                cipher_text=cipher_text
+                                cipher_text=cipher_text['cipher_text']
                             )
                         )
                         response = message_to_dict(response_message)
@@ -164,6 +158,7 @@ class ServerProtocol(Protocol):
                     return
 
             case 3:
+                
                 return
             case 5:
                 return
