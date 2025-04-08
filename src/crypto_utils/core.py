@@ -7,24 +7,28 @@ import os
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import base64
 import hashlib
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
 
+from cryptography.hazmat.primitives.asymmetric import ec
 def load_private_key(file_path: str):
     """
-    Load a private RSA key from a file. 
+    Load a private key from a file. 
 
     :param file_path: Path to the private key file.
-    :return: An RSA private key object.
+    :return: a private key object.
     """
     with open(file_path, "rb") as f:
         key_data = f.read()
         return serialization.load_pem_private_key(key_data, password=None )
 
 
+
+
 def load_public_key(file_path: str):
     """
-    Load a public RSA key from a file.
+    Load a public key from a file.
     :param file_path: Path to the public key file.
-    :return: An RSA public key object.
+    :return: a public key object.
     """
     with open(file_path, "rb") as f:
         key_data = f.read()
@@ -50,7 +54,11 @@ def asymmetric_decryption(private_key, ciphertext: bytes) -> bytes:
         )
     )
     return plaintext
+def sign_payload(payload: bytes, private_key: Ed25519PrivateKey):
+    return private_key.sign(payload,ec.ECDSA(hashes.SHA256()))
 
+def verify_signature(payload: bytes, signature: bytes, public_key: Ed25519PublicKey):
+    public_key.verify(signature, payload,ec.ECDSA(hashes.SHA256()))
 
 def generate_nonce():
     return secrets.token_hex(16)   

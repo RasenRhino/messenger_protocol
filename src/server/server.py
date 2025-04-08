@@ -22,8 +22,8 @@ import signal
 MAX_ERRORS = 3
 PRIVATE_KEY_ENCRYPTION = f"{ROOT_DIR}/server/encryption_keys/private_key_encryption.pem"
 PUBLIC_KEY_ENCRYPTION = f"{ROOT_DIR}/server/encryption_keys/public_key_encryption.pem" 
-PRIVATE_KEY_SIGNING= f"{ROOT_DIR}/server/encryption_keys/private_key_signing.pem"
-PUBLIC_KEY_SIGNING= f"{ROOT_DIR}/server/encryption_keys/public_key_signing.pem" 
+PRIVATE_KEY_SIGNING= f"{ROOT_DIR}/server/signing_keys/private_key_signing.pem"
+PUBLIC_KEY_SIGNING= f"{ROOT_DIR}/server/signing_keys/public_key_signing.pem" 
 PUBLIC_PARAMS=f"{ROOT_DIR}/public_params.json"
 def message_to_dict(message: Message) -> dict:
     return strip_none(asdict(message))
@@ -98,10 +98,20 @@ class ServerProtocol(Protocol):
             metadata=Metadata(packet_type=PacketType.ERROR, state=state, error_count=self.error_count),
             payload=Payload(
                 message=message_str,
-                signature="Sig(message||nonce)"  # Placeholder
+                nonce=nonce
             )
         )
-
+        error_dict=message_to_dict(error_msg)
+        payload=json.dumps(error_dict).encode('utf-8')
+        signature=sign_payload(payload,self.factory.private_key_signing)
+        error_msg_signed = Message(
+        metadata=Metadata(packet_type=PacketType.ERROR, state=state, error_count=self.error_count),
+        payload=Payload(
+            message=message_str,
+            signature=signature,
+            nonce=nonce
+            )
+        )
         cleaned = message_to_dict(error_msg)
         self.transport.write(json.dumps(cleaned).encode('utf-8'))
         if (self.error_count >= MAX_ERRORS or state==ProtocolState.PRE_AUTH.value):

@@ -10,22 +10,20 @@ PUBLIC_KEY_ENCRYPTION="public_key_encryption.pem"
 PRIVATE_KEY_SIGNING="private_key_signing.pem"
 PUBLIC_KEY_SIGNING="public_key_signing.pem"
 
-# Generate the private keys
-echo "Generating private RSA keys in PEM format..."
+# Generate RSA key pair for encryption
+echo "🔐 Generating RSA encryption keys..."
 openssl genrsa -out "$PRIVATE_KEY_ENCRYPTION" 2048
-openssl genrsa -out "$PRIVATE_KEY_SIGNING" 2048
-
-# Generate the public keys from private keys
-echo "Generating corresponding public RSA keys in PEM format..."
 openssl rsa -in "$PRIVATE_KEY_ENCRYPTION" -pubout -out "$PUBLIC_KEY_ENCRYPTION"
-openssl rsa -in "$PRIVATE_KEY_SIGNING" -pubout -out "$PUBLIC_KEY_SIGNING"
 
-# Move encryption-related keys to encryption_keys/
-mv "$PRIVATE_KEY_ENCRYPTION" "$PUBLIC_KEY_ENCRYPTION" encryption_keys/
+# Generate Ed25519 key pair for signing
+echo "✍️ Generating Ed25519 signing keys (Curve25519)..."
+openssl genpkey -algorithm ED25519 -out "$PRIVATE_KEY_SIGNING"
+openssl pkey -in "$PRIVATE_KEY_SIGNING" -pubout -out "$PUBLIC_KEY_SIGNING"
 
-# Move signing-related keys to signing_keys/
-mv "$PRIVATE_KEY_SIGNING" "$PUBLIC_KEY_SIGNING" signing_keys/
+# Organize key files
+rm -rf ./server/encryption_keys ./server/signing_keys
+mkdir -p ./server/encryption_keys ./server/signing_keys
+mv "$PRIVATE_KEY_ENCRYPTION" "$PUBLIC_KEY_ENCRYPTION" ./server/encryption_keys/
+mv "$PRIVATE_KEY_SIGNING" "$PUBLIC_KEY_SIGNING" ./server/signing_keys/
 
-echo "✅ RSA key pair generation completed successfully!"
-mv encryption_keys  ./server/
-mv signing_keys ./server/
+echo "✅ RSA + Ed25519 key pair generation completed successfully!"
