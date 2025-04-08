@@ -1,5 +1,7 @@
 import sys
 from pathlib import Path
+
+from config.config import load_dh_public_params
 ROOT_DIR = str(Path(__file__).parent.parent.resolve())
 print(ROOT_DIR)
 if ROOT_DIR not in sys.path:
@@ -138,20 +140,20 @@ class ServerProtocol(Protocol):
                     self.cursor.execute("SELECT * from users WHERE username=?", (message.payload.username,))
                     row = self.cursor.fetchone() ##i am wondering if i should do a fetchall and 
                     if row:
-                        username,hashed_key,salt=row
-                        g=self.factory.public_params['g']
-                        p=self.factory.public_params['p']
-                                        
-                        ## Ritik : do all symmetric key bhang bhosda here, use these values. use the hashed password only
-
-                        self.symmetric_key = generate_symmetric_key(g,p,hashed_key)
+                        username,v,salt=row
+                        g=self.factory.g
+                        N=self.factory.N
+                        k=self.factory.k
+                        A=message.metadata.dh_contribution
+                        v=int(v,16)
+                        B,self.symmetric_key = generate_server_key(k,v,A,g,N)
                         server_challenge = secrets.token_hex(16)  
                         self.cs_auth_state['2']={}
                         self.cs_auth_state['2']['server_challenge']=server_challenge
                         payload={
                             "seq":2,
                             "server_challenge": server_challenge,
-                            "nonce": SHA3_512(message.metadata.nonce)
+                            "nonce": message.metadata.nonce
                         }
                         payload=json.dumps(payload)
                         cipher_text=symmetric_encryption(self.symmetric_key,payload,message.metadata.packet_type)
@@ -159,7 +161,7 @@ class ServerProtocol(Protocol):
                             metadata=Metadata(
                                 packet_type=PacketType.CS_AUTH.value,
                                 salt=salt,
-                                dh_contribution=4444, ##generate a valid_dh_contribution
+                                dh_contribution=B, ##generate a valid_dh_contribution
                                 iv=cipher_text['iv'],
                                 tag=cipher_text['tag'],
                             ),
@@ -334,7 +336,7 @@ class ServerFactory(Factory):
             print(f"[!] Key loading failed: {e}")
             sys.exit(1)
         try:
-            self.public_params=get_public_params(PUBLIC_PARAMS)['public_params']
+            self.g,self.N,self.k=load_dh_public_params()
         except Exception as e:
             print(f"Couldn't get public params {e}")
             sys.exit(1)

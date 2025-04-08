@@ -127,14 +127,11 @@ def asymmetric_encryption(public_key, message: bytes) -> bytes:
 def generate_dh_private_exponent(n_bytes=32):
     return int.from_bytes(os.urandom(n_bytes))
 
-def generate_dh_contribution():
-    pass  # TODO
-
-def generate_symmetric_key(g,p,hashed_key):
-    #Ritik
-    key="12345678"*4
-    key=key.encode('utf-8')
-    return key
+# def generate_symmetric_key(g,p,hashed_key):
+#     #Ritik
+#     key="12345678"*4
+#     key=key.encode('utf-8')
+#     return key
 
 def H(*args):
     a = ":".join(str(a) for a in args)
@@ -159,3 +156,9 @@ def server_compute_srp_session_key(k, v, b, B, A, N):
     S_s = pow(A * pow(v, u, N), b, N)
     K_s = H(S_s)
     return hashlib.sha3_512(str(K_s).encode()).digest()[:32]
+
+def generate_server_key(k,v,A,g,N) -> dict:
+    b=generate_dh_private_exponent()
+    B=server_srp_dh_public_contribution(k,v,b,g,N)
+    key=server_compute_srp_session_key(k, v, b, B, A, N)
+    return (B,key)
