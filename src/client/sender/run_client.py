@@ -1,7 +1,7 @@
 import socket
 import time
 from config.config import load_server_address, TCP_RECV_SIZE
-from sender.cs_auth import login
+from client.sender.cs_auth import login
 
 
 
