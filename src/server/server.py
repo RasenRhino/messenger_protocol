@@ -22,6 +22,8 @@ import signal
 MAX_ERRORS = 3
 PRIVATE_KEY_ENCRYPTION = f"{ROOT_DIR}/server/encryption_keys/private_key_encryption.pem"
 PUBLIC_KEY_ENCRYPTION = f"{ROOT_DIR}/server/encryption_keys/public_key_encryption.pem" 
+PRIVATE_KEY_SIGNING= f"{ROOT_DIR}/server/encryption_keys/private_key_signing.pem"
+PUBLIC_KEY_SIGNING= f"{ROOT_DIR}/server/encryption_keys/public_key_signing.pem" 
 PUBLIC_PARAMS=f"{ROOT_DIR}/public_params.json"
 def message_to_dict(message: Message) -> dict:
     return strip_none(asdict(message))
@@ -89,7 +91,7 @@ class ServerProtocol(Protocol):
         self.username = None
         print(f"[-] Connection lost. Active: {self.factory.numProtocols}")
 
-    def send_error(self, message_str, state):
+    def send_error(self, message_str, state,nonce):
         if (state == ProtocolState.POST_AUTH.value):
             self.error_count += 1
         error_msg = Message(
@@ -112,7 +114,7 @@ class ServerProtocol(Protocol):
     def cs_auth_handler(self, data):
         try:
             if(PacketType.CS_AUTH.value not in self.state_dict.keys()):
-                message = parse_message(data, decrypt_fn=asymmetric_decryption, key=self.factory.private_key)
+                message = parse_message(data, decrypt_fn=asymmetric_decryption, key=self.factory.private_key_encryption)
             else:
                 message = parse_message(data,decrypt_fn=symmetric_decryption,key=self.symmetric_key)
         except Exception as e:
@@ -175,7 +177,7 @@ class ServerProtocol(Protocol):
                         self.state_dict[PacketType.CS_AUTH.value]=2
                         return
                     else:
-                        self.send_error("Username not found", state=ProtocolState.PRE_AUTH.value)
+                        self.send_error("Username not found", state=ProtocolState.PRE_AUTH.value,nonce=message.metadata.nonce)
                         return
                 except Exception as e:
                     print(f"[ERROR] in case 1 of cs_auth_handler : {e} ")
@@ -266,7 +268,11 @@ class ServerProtocol(Protocol):
                     "packet_type":"message",
                     "seq":2,
                     "recipient":message.payload.recipient,
+<<<<<<< Updated upstream
                     "nonce": message.payload.nonce,
+=======
+                    "nonce":H(message.payload.nonce),
+>>>>>>> Stashed changes
                     "encryption_public_key":encryption_public_key,
                     "signature_verification_public_key":signature_verification_public_key,
                     "listen_address":listen_address
@@ -332,8 +338,10 @@ class ServerFactory(Factory):
         )
 
         try:
-            self.private_key = load_private_key(PRIVATE_KEY_ENCRYPTION)
+            self.private_key_encryption = load_private_key(PRIVATE_KEY_ENCRYPTION)
             self.public_key_encryption = load_public_key(PUBLIC_KEY_ENCRYPTION)
+            self.private_key_signing = load_private_key(PRIVATE_KEY_SIGNING)
+            self.public_key_signing = load_public_key(PUBLIC_KEY_SIGNING)
         except Exception as e:
             print(f"[!] Key loading failed: {e}")
             sys.exit(1)

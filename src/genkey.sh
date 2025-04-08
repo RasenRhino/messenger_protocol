@@ -27,3 +27,5 @@ mv "$PRIVATE_KEY_ENCRYPTION" "$PUBLIC_KEY_ENCRYPTION" encryption_keys/
 mv "$PRIVATE_KEY_SIGNING" "$PUBLIC_KEY_SIGNING" signing_keys/
 
 echo "✅ RSA key pair generation completed successfully!"
+mv encryption_keys  ./server/
+mv signing_keys ./server/
