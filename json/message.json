@@ -1,16 +1,24 @@
 {
     "messages": {
         "1": {
-            "payload": {
+            "metadata": {
                 "packet_type": "message",
+                "iv": "iv",
+                "tag": "tag"
+            },
+            "payload": {
                 "seq": 1,
                 "recipient": "Bob",
                 "nonce": "N1"
             }
         },
         "2": {
-            "payload": {
+            "metadata": {
                 "packet_type": "message",
+                "iv": "iv",
+                "tag": "tag"
+            },
+            "payload": {
                 "seq": 2,
                 "recipient": "Bob",
                 "nonce": "N1",

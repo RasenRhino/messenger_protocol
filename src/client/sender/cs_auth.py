@@ -12,9 +12,11 @@ def login_step_1(client_socket, username, password, a, g, N, k):
     A = client_srp_dh_public_contribution(g, a, N)
     nonce = generate_nonce()
     server_public_key = load_server_public_key()
+    
     payload = {
         "seq": seq,
-        "username": username
+        "username": username,
+        "nonce": nonce
     }
     encrypted_payload = asymmetric_encryption(server_public_key, json.dumps(payload).encode())
     encoded_payload = base64.b64encode(encrypted_payload).decode()
@@ -22,7 +24,6 @@ def login_step_1(client_socket, username, password, a, g, N, k):
         "metadata": {
             "packet_type": "cs_auth",
             "dh_contribution": A,
-            "nonce": nonce
         },
         "payload": {
             "cipher_text": encoded_payload
