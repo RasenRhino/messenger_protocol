@@ -4,7 +4,7 @@ import socket
 import base64
 from crypto_utils.core import *
 from config.config import load_dh_public_params, load_server_public_key, client_store, client_store_lock, TCP_RECV_SIZE
-from client.helpers.validator import *
+from client.helpers import *
 from config.exceptions import *
 
 def login_step_1(client_socket, username, password, a, g, N, k):

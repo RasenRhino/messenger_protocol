@@ -101,6 +101,59 @@
             ]
         }     
     },
+    "list_schema": {
+        "2": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "type": "object",
+                    "properties": {
+                        "packet_type": {
+                            "type": "string",
+                            "const": "list"
+                        },
+                        "iv": {
+                            "type": "string"
+                        },
+                        "tag": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "packet_type",
+                        "iv",
+                        "tag"
+                    ]
+                },
+                "payload": {
+                    "type": "object",
+                    "properties": {
+                        "seq": {
+                            "type": "integer"
+                        },
+                        "nonce": {
+                            "type": "string"
+                        },
+                        "signed_in_users": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "required": [
+                        "seq",
+                        "nonce",
+                        "signed_in_users"
+                    ]
+                }
+            },
+            "required": [
+                "metadata",
+                "payload"
+            ]
+        }
+    },
     "errors_schema": {
         "pre_auth": {
             "type": "object",
