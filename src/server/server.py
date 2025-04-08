@@ -217,7 +217,8 @@ class ServerProtocol(Protocol):
             case 5:
                 #check if the payload has the required key-value pairs or not
                 try:
-                    self.factory.add_user_to_userlist(message.payload.username,message.payload.encryption_public_key,message.payload.signature_verification_public_key,message.payload.listening_ip)
+                    print(message.payload)
+                    self.factory.add_user_to_userlist(message.payload.username,message.payload.encryption_public_key,message.payload.signature_verification_public_key,message.payload.listen_address)
                     #should we add any authentication messsage confirmation ?? 
                     self.state_dict[PacketType.CS_AUTH.value]=0 # 0 means authentication successful
                     print(self.factory.userlist)
@@ -260,15 +261,15 @@ class ServerProtocol(Protocol):
                 recipient=message.payload.recipient
                 encryption_public_key = self.factory.userlist[recipient][encryption_public_key] 
                 signature_verification_public_key=self.factory.userlist[recipient][signature_verification_public_key]
-                listening_ip=self.factory.userlist[recipient][listening_ip]
+                listen_address=self.factory.userlist[recipient][listen_address]
                 payload={
                     "packet_type":"message",
                     "seq":2,
                     "recipient":message.payload.recipient,
-                    "nonce":SHA3_512(message.payload.nonce),
+                    "nonce": message.payload.nonce,
                     "encryption_public_key":encryption_public_key,
                     "signature_verification_public_key":signature_verification_public_key,
-                    "listening_ip":listening_ip
+                    "listen_address":listen_address
                 } 
                 payload=json.dumps(payload) 
                 cipher_text=symmetric_encryption(self.symmetric_key,payload,message.payload.packet_type)
