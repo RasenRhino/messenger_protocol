@@ -1,0 +1,104 @@
+{
+    "cs_auth_schema": {
+        "2": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "type": "object",
+                    "properties": {
+                        "packet_type": {
+                            "type": "string",
+                            "const": "cs_auth"
+                        },
+                        "salt": {
+                            "type": "string"
+                        },
+                        "dh_contribution": {
+                            "type": "integer"
+                        },
+                        "iv": {
+                            "type": "string"
+                        },
+                        "tag": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "packet_type",
+                        "salt",
+                        "dh_contribution",
+                        "iv",
+                        "tag"
+                    ]
+                },
+                "payload": {
+                    "type": "object",
+                    "properties": {
+                        "seq": {
+                            "type": "integer"
+                        },
+                        "server_challenge": {
+                            "type": "string"
+                        },
+                        "nonce": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "seq",
+                        "server_challenge",
+                        "nonce"
+                    ]
+                }
+            },
+            "required": [
+                "metadata",
+                "payload"
+            ]
+        }        
+    },
+    "errors_schema": {
+        "pre_auth": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "type": "object",
+                    "properties": {
+                        "packet_type": {
+                            "type": "string",
+                            "const": "error"
+                        },
+                        "state": {
+                            "type": "string",
+                            "enum": ["pre_auth", "post_auth"]
+                        },
+                        "error_count": {
+                            "type": "integer",
+                            "minimum": 0
+                        }
+                    },
+                    "required": ["packet_type", "state"],
+                    "additionalProperties": false
+                },
+                "payload": {
+                    "type": "object",
+                    "properties": {
+                        "message": {
+                            "type": "string"
+                        },
+                        "nonce": {
+                            "type": "string"
+                        },
+                        "signature": {
+                            "type": "string"
+                        }
+                    },
+                    "required": ["message", "signature"],
+                    "additionalProperties": false
+                }
+            },
+            "required": ["metadata", "payload"],
+            "additionalProperties": false
+        }
+    }
+}

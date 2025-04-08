@@ -8,6 +8,6 @@ class PacketType(str, Enum):
     # Add more packet types as needed
 
 class ProtocolState(str, Enum):
-    PRE_AUTH = "pre-auth"
-    POST_AUTH = "post-auth"
+    PRE_AUTH = "pre_auth"
+    POST_AUTH = "post_auth"
     # Add more states if needed

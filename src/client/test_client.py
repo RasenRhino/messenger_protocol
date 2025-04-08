@@ -9,6 +9,9 @@ import base64
 from cryptography.hazmat.primitives import hashes
 from crypto_utils.core import * 
 import secrets
+from pathlib import Path
+
+ROOT_DIR = str(Path(__file__).parent.parent.resolve())
 HOST = '127.0.0.1'
 PORT = 9000
 
@@ -35,8 +38,8 @@ data = {
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     #part 1
 s.connect((HOST, PORT))
-key=load_public_key("/Users/ridhambhagat/Documents/neu/spring2025/ns/protocol_implementation/src/server/encryption_keys/public_key_encryption.pem")
-priv_key=load_private_key("/Users/ridhambhagat/Documents/neu/spring2025/ns/protocol_implementation/src/server/encryption_keys/private_key_encryption.pem")
+key=load_public_key(f"{ROOT_DIR}/server/encryption_keys/public_key_encryption.pem")
+priv_key=load_private_key(f"{ROOT_DIR}/server/encryption_keys/private_key_encryption.pem")
 payload_bytes=json.dumps(data['payload']).encode('utf-8')
 data['payload']=base64.b64encode(asymmetric_encryption(key,payload_bytes)).decode('utf-8')
 # enc_payload_bytes=base64.b64decode(data['payload'].encode('utf-8'))

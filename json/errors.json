@@ -3,7 +3,8 @@
       "1": {
         "metadata": {
           "packet_type": "error",
-          "state": "pre-auth"
+          "state": "pre_auth",
+          "error_count": 0
         },
         "payload": {
           "message": "Shit happened",
@@ -14,7 +15,8 @@
       "2": {
         "metadata": {
           "packet_type": "error",
-          "state": "post_auth"
+          "state": "post_auth",
+          "error_count": 0
         },
         "payload": {
           "message": "Shit happened",

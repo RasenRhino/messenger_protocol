@@ -4,6 +4,8 @@ from cryptography.hazmat.primitives.asymmetric import rsa, padding
 import os
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import base64
+import hashlib
+
 def load_private_key(file_path: str):
     """
     Load a private RSA key from a file. 
@@ -122,6 +124,8 @@ def asymmetric_encryption(public_key, message: bytes) -> bytes:
     )
     return ciphertext
 
+def generate_dh_private_exponent(n_bytes=32):
+    return int.from_bytes(os.urandom(n_bytes))
 
 def generate_dh_contribution():
     pass  # TODO
@@ -131,4 +135,27 @@ def generate_symmetric_key(g,p,hashed_key):
     key="12345678"*4
     key=key.encode('utf-8')
     return key
-    
+
+def H(*args):
+    a = ":".join(str(a) for a in args)
+    return int(hashlib.sha3_512(a.encode()).hexdigest(), 16)
+
+def client_srp_dh_public_contribution(g, a, N):
+    return pow(g, a, N)
+
+def client_compute_srp_session_key(salt, username, password, a, A, B, g, N, k):
+    x = H(salt, username, password)
+    u = H(A, B)
+    S_c = pow(B - (k * pow(g, x, N)), a + (u * x), N)
+    K_c = H(S_c)
+    return hashlib.sha3_512(str(K_c).encode()).digest()[:32]
+
+def server_srp_dh_public_contribution(k, v, b, g, N):
+    B = (k * v + pow(g, b, N)) % N
+    return B
+
+def server_compute_srp_session_key(k, v, b, B, A, N):
+    u = H(A, B)
+    S_s = pow(A * pow(v, u, N), b, N)
+    K_s = H(S_s)
+    return hashlib.sha3_512(str(K_s).encode()).digest()[:32]

@@ -1,3 +1,9 @@
+import sys
+from pathlib import Path
+ROOT_DIR = str(Path(__file__).parent.parent.resolve())
+print(ROOT_DIR)
+if ROOT_DIR not in sys.path:
+    sys.path.append(ROOT_DIR)
 import string
 from server_models import Metadata, Payload, Message, User
 from server_constants import PacketType, ProtocolState
@@ -7,14 +13,13 @@ import sqlite3, json
 import secrets
 from dataclasses import asdict
 from crypto_utils.core import *
-import sys
 import base64
 import signal
 
 MAX_ERRORS = 3
-PRIVATE_KEY_ENCRYPTION = "/Users/ridhambhagat/Documents/neu/spring2025/ns/protocol_implementation/src/server/encryption_keys/private_key_encryption.pem"
-PUBLIC_KEY_ENCRYPTION = "/Users/ridhambhagat/Documents/neu/spring2025/ns/protocol_implementation/src/server/encryption_keys/public_key_encryption.pem" 
-PUBLIC_PARAMS="/Users/ridhambhagat/Documents/neu/spring2025/ns/protocol_implementation/src/public_params.json"
+PRIVATE_KEY_ENCRYPTION = f"{ROOT_DIR}/server/encryption_keys/private_key_encryption.pem"
+PUBLIC_KEY_ENCRYPTION = f"{ROOT_DIR}/server/encryption_keys/public_key_encryption.pem" 
+PUBLIC_PARAMS=f"{ROOT_DIR}/public_params.json"
 def message_to_dict(message: Message) -> dict:
     return strip_none(asdict(message))
 
@@ -46,9 +51,10 @@ def parse_message(data: dict, decrypt_fn=None, key=None, **kwargs) -> Message:
         decrypted_bytes = decrypt_fn(key, encrypted_payload, iv, tag, aad)
         payload_data = json.loads(decrypted_bytes.decode('utf-8'))
     elif decrypt_fn == asymmetric_decryption:
-        payload_data = base64.b64decode(data['payload'])
+        payload_data = base64.b64decode(data['payload']['cipher_text'])
         decrypted_bytes = decrypt_fn(key, payload_data)
         payload_data = json.loads(decrypted_bytes.decode('utf-8'))
+        print(payload_data)
     else:
         payload_data = data['payload']
 
@@ -84,7 +90,7 @@ class ServerProtocol(Protocol):
         if (state == ProtocolState.POST_AUTH.value):
             self.error_count += 1
         error_msg = Message(
-            metadata=Metadata(packet_type=PacketType.ERROR, state=state),
+            metadata=Metadata(packet_type=PacketType.ERROR, state=state, error_count=self.error_count),
             payload=Payload(
                 message=message_str,
                 signature="Sig(message||nonce)"  # Placeholder
@@ -92,8 +98,7 @@ class ServerProtocol(Protocol):
         )
 
         cleaned = message_to_dict(error_msg)
-        response = {"errors": {str(self.error_count): cleaned}}
-        self.transport.write(json.dumps(response).encode('utf-8'))
+        self.transport.write(json.dumps(cleaned).encode('utf-8'))
         if (self.error_count >= MAX_ERRORS or state==ProtocolState.PRE_AUTH.value):
             if(state!=ProtocolState.PRE_AUTH.value):
                 print(f"[!] Too many errors. Closing connection.")
@@ -146,7 +151,7 @@ class ServerProtocol(Protocol):
                         payload={
                             "seq":2,
                             "server_challenge": server_challenge,
-                            "nonce": SHA3_512(message.payload.nonce)
+                            "nonce": SHA3_512(message.metadata.nonce)
                         }
                         payload=json.dumps(payload)
                         cipher_text=symmetric_encryption(self.symmetric_key,payload,message.metadata.packet_type)

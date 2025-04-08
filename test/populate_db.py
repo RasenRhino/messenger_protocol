@@ -15,7 +15,7 @@ def generate_salt(length=16):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
 def generate_key():
-    return ''.join(random.choices(string.digits, k=6))
+    return ''.join(random.choices(string.digits, k=1)) # k=1 is for testing
 
 def hash_password_with_salt(password, salt):
     digest = hashes.Hash(hashes.SHA3_512(), backend=default_backend())
