@@ -1,5 +1,6 @@
 import socket
 import time
+import sys
 import inspect
 from config.config import TCP_RECV_SIZE
 from client.commands.commands import send_list_packet, send_message_packet
@@ -14,9 +15,9 @@ def command_loop(client_socket: socket.socket):
                 case "list":
                     send_list_packet(client_socket)
                 case "send":
-                    username = command[1]
+                    recipient = command[1]
                     message = " ".join(command[2:])
-                    send_message_packet(client_socket,username, message)
+                    send_message_packet(client_socket, recipient, message)
                 case _:
                     error = inspect.cleandoc(f"""
                             +> Operation {operation} is not supported

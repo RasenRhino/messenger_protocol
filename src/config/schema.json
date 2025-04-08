@@ -154,6 +154,68 @@
             ]
         }
     },
+    "message_schema": {
+        "2": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "type": "object",
+                    "properties": {
+                        "packet_type": {
+                            "type": "string",
+                            "const": "message"
+                        },
+                        "iv": {
+                            "type": "string"
+                        },
+                        "tag": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "packet_type",
+                        "iv",
+                        "tag"
+                    ]
+                },
+                "payload": {
+                    "type": "object",
+                    "properties": {
+                        "seq": {
+                            "type": "integer"
+                        },
+                        "nonce": {
+                            "type": "string"
+                        },
+                        "recipient": {
+                            "type": "string"
+                        },
+                        "encryption_public_key": {
+                            "type": "string"
+                        },
+                        "signature_verification_public_key": {
+                            "type": "string"
+                        },
+                        "listen_address": {
+                            "type": "string"
+                        },
+                    },
+                    "required": [
+                        "seq",
+                        "nonce",
+                        "recipient",
+                        "encryption_public_key",
+                        "signature_verification_public_key",
+                        "listen_address"
+                    ]
+                }
+            },
+            "required": [
+                "metadata",
+                "payload"
+            ]
+        }
+    },
     "errors_schema": {
         "pre_auth": {
             "type": "object",
