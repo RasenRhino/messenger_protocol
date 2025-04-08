@@ -1,4 +1,5 @@
 # src/crypto_utils/core.py
+import secrets
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 import os
@@ -50,11 +51,15 @@ def asymmetric_decryption(private_key, ciphertext: bytes) -> bytes:
     return plaintext
 
 
+def generate_nonce():
+    return secrets.token_hex(16)   
+def generate_challenge():
+    return secrets.token_hex(16)   
 def SHA3_512(data:str):
     digest = hashes.Hash(hashes.SHA3_512())
     digest.update(data.encode('utf-8'))
     return base64.b64encode(digest.finalize()).decode('utf-8')
-def symmetric_decryption(key: bytes, payload:bytes ,iv:bytes, tag: bytes, aad: bytes) -> bytes:
+def symmetric_decryption(key: bytes, payload:str,iv:str, tag: str, aad: str) -> bytes:
     """
     Decrypt AES-GCM encrypted data.
     :param key: The symmetric AES key.
@@ -64,6 +69,10 @@ def symmetric_decryption(key: bytes, payload:bytes ,iv:bytes, tag: bytes, aad: b
     :param aad: Additional authenticated data used in encryption.
     :return: Decrypted plaintext bytes.
     """
+    iv = base64.b64decode(iv)
+    tag=base64.b64decode(tag)
+    payload= base64.b64decode(payload)
+    aad=aad.encode('utf-8')
     cipher = Cipher(algorithms.AES(key), modes.GCM(iv, tag))
     decryptor = cipher.decryptor()
     #pls validate aad==packet_type in client side code

@@ -55,7 +55,51 @@
                 "metadata",
                 "payload"
             ]
-        }        
+        },
+        "4": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "type": "object",
+                    "properties": {
+                        "packet_type": {
+                            "type": "string",
+                            "const": "cs_auth"
+                        },
+                        "iv": {
+                            "type": "string"
+                        },
+                        "tag": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "packet_type",
+                        "iv",
+                        "tag"
+                    ]
+                },
+                "payload": {
+                    "type": "object",
+                    "properties": {
+                        "seq": {
+                            "type": "integer"
+                        },
+                        "client_challenge_solution": {
+                            "type": "integer"
+                        }
+                    },
+                    "required": [
+                        "seq",
+                        "client_challenge_solution"
+                    ]
+                }
+            },
+            "required": [
+                "metadata",
+                "payload"
+            ]
+        }     
     },
     "errors_schema": {
         "pre_auth": {

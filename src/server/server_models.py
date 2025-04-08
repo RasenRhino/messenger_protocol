@@ -27,7 +27,6 @@ class Payload:
     seq: Optional[int] = None
     username: Optional[str] = None
     nonce: Optional[str] = None
-    dh_contribution: Optional[int] = None  
     server_challenge: Optional[str] = None
     server_challenge_solution: Optional[str] = None
     client_challenge: Optional[str] = None

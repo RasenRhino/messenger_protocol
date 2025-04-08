@@ -10,7 +10,7 @@ from config.exceptions import *
 def login_step_1(client_socket, username, password, a, g, N, k):
     seq = 1
     A = client_srp_dh_public_contribution(g, a, N)
-    nonce = os.urandom(16).hex()
+    nonce = generate_nonce()
     server_public_key = load_server_public_key()
     payload = {
         "seq": seq,
@@ -48,7 +48,7 @@ def login_step_1(client_socket, username, password, a, g, N, k):
             with client_store_lock:
                 client_store.setdefault("server",{})["session_key"] = session_key
             payload = response.get("payload").get("cipher_text")
-            decrypted_payload = symmetric_decryption(key=session_key, payload=payload, iv=metadata["iv"], tag=metadata["tag"], aad=packet_type.encode())
+            decrypted_payload = symmetric_decryption(key=session_key, payload=payload, iv=metadata["iv"], tag=metadata["tag"], aad=packet_type)
             decrypted_payload = json.loads(decrypted_payload.decode())
             current_seq = decrypted_payload["seq"]
             if current_seq != 2:
@@ -70,16 +70,16 @@ def login_step_2(client_socket):
     with client_store_lock:
         server_challenge = client_store["server"]["server_challenge"]
         session_key = client_store["server"]["session_key"]
-        client_challenge = os.urandom(16).hex()
+        client_challenge = generate_challenge() 
         client_store["server"]["client_challenge"] = client_challenge
 
-    server_challenge_solution = SHA3_512(server_challenge) 
+    server_challenge_solution = H(server_challenge) 
     payload = {
         "seq": seq,
         "server_challenge_solution": server_challenge_solution,
         "client_challenge": client_challenge
     } 
-    result = symmetric_encryption(session_key, json.dumps(payload).encode(), aad="cs_auth")
+    result = symmetric_encryption(session_key, json.dumps(payload), aad="cs_auth")
     
     msg = {
         "metadata": {
@@ -102,15 +102,15 @@ def login_step_2(client_socket):
     match packet_type:
         case "cs_auth":
             metadata = response.get("metadata")
-            validate_packet_field(metadata, packet_type=packet_type, field="metadata", seq=3)
+            validate_packet_field(metadata, packet_type=packet_type, field="metadata", seq=4)
             payload = response.get("payload").get("cipher_text")
-            decrypted_payload = symmetric_decryption(key=session_key, payload=payload, iv=metadata["iv"], tag=metadata["tag"], aad=packet_type.encode())
+            decrypted_payload = symmetric_decryption(key=session_key, payload=payload, iv=metadata["iv"], tag=metadata["tag"], aad=packet_type)
             decrypted_payload = json.loads(decrypted_payload.decode())
             current_seq = decrypted_payload["seq"]
             if current_seq != 4:
                 raise InvalidSeqNumber()
             validate_packet_field(decrypted_payload, packet_type="cs_auth", field="payload", seq=current_seq)
-            client_challenge_solution = SHA3_512(client_challenge)
+            client_challenge_solution = H(client_challenge)
             if client_challenge_solution != decrypted_payload["client_challenge_solution"]:
                 raise ChallengeResponseFailed()
         # Error cases need to be tweaked later

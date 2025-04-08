@@ -1,11 +1,12 @@
 import sys
 from pathlib import Path
 
-from config.config import load_dh_public_params
 ROOT_DIR = str(Path(__file__).parent.parent.resolve())
 print(ROOT_DIR)
 if ROOT_DIR not in sys.path:
     sys.path.append(ROOT_DIR)
+from config.config import load_dh_public_params
+
 import string
 from server_models import Metadata, Payload, Message, User
 from server_constants import PacketType, ProtocolState
@@ -46,10 +47,10 @@ def strip_none(obj):
 def parse_message(data: dict, decrypt_fn=None, key=None, **kwargs) -> Message:
     metadata = Metadata(**data['metadata'])
     if decrypt_fn == symmetric_decryption:
-        encrypted_payload = base64.b64decode(data['payload']['cipher_text'])
-        iv = base64.b64decode(data['metadata']['iv'])
-        tag = base64.b64decode(data['metadata']['tag'])
-        aad = data['metadata']['packet_type'].encode('utf-8')
+        encrypted_payload = data['payload']['cipher_text']
+        iv = data['metadata']['iv']
+        tag = data['metadata']['tag']
+        aad = data['metadata']['packet_type']
         decrypted_bytes = decrypt_fn(key, encrypted_payload, iv, tag, aad)
         payload_data = json.loads(decrypted_bytes.decode('utf-8'))
     elif decrypt_fn == asymmetric_decryption:
@@ -147,7 +148,7 @@ class ServerProtocol(Protocol):
                         A=message.metadata.dh_contribution
                         v=int(v,16)
                         B,self.symmetric_key = generate_server_key(k,v,A,g,N)
-                        server_challenge = secrets.token_hex(16)  
+                        server_challenge = generate_challenge() 
                         self.cs_auth_state['2']={}
                         self.cs_auth_state['2']['server_challenge']=server_challenge
                         payload={
@@ -183,11 +184,11 @@ class ServerProtocol(Protocol):
 
             case 3:
                 try:
-                    server_challenge_hash=SHA3_512(self.cs_auth_state['2']['server_challenge'])
+                    server_challenge_hash=H(self.cs_auth_state['2']['server_challenge'])
                     if(server_challenge_hash != message.payload.server_challenge_solution):
                         self.send_error("Incorrect response to server challenge", state=ProtocolState.PRE_AUTH.value)
                     
-                    client_challenge_solution=SHA3_512(message.payload.client_challenge)
+                    client_challenge_solution=H(message.payload.client_challenge)
                     payload={
                                 "seq":4,
                                 "client_challenge_solution":client_challenge_solution
