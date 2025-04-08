@@ -263,7 +263,7 @@ class ServerProtocol(Protocol):
             self.state_dict[PacketType.MESSAGE.value] = 1
 
         else:
-            if message.payload.seq <= self.state_dict[PacketType.CS_AUTH.value] and message.payload.seq > self.state_dict[PacketType.CS_AUTH.value]+1:
+            if message.payload.seq <= self.state_dict[PacketType.CS_AUTH.value] or message.payload.seq > self.state_dict[PacketType.CS_AUTH.value]+1:
                 self.send_error("Invalid sequence number", state=ProtocolState.POST_AUTH.value)
                 return
         if (message.payload.recipient not in self.factory.userlist.keys()):

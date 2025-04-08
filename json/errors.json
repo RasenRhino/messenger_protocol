@@ -21,7 +21,7 @@
         "payload": {
           "message": "Shit happened",
           "nonce": "N1",
-          "signature": "Sig(message||nonce)"
+          // "signature": "Sig(message||nonce)"
         }
       }
     }
