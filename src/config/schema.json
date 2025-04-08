@@ -29,7 +29,8 @@
                         "dh_contribution",
                         "iv",
                         "tag"
-                    ]
+                    ],
+                    "additionalProperties": false
                 },
                 "payload": {
                     "type": "object",
@@ -48,13 +49,15 @@
                         "seq",
                         "server_challenge",
                         "nonce"
-                    ]
+                    ],
+                    "additionalProperties": false
                 }
             },
             "required": [
                 "metadata",
                 "payload"
-            ]
+            ],
+            "additionalProperties": false
         },
         "4": {
             "type": "object",
@@ -77,7 +80,8 @@
                         "packet_type",
                         "iv",
                         "tag"
-                    ]
+                    ],
+                    "additionalProperties": false
                 },
                 "payload": {
                     "type": "object",
@@ -92,13 +96,15 @@
                     "required": [
                         "seq",
                         "client_challenge_solution"
-                    ]
+                    ],
+                    "additionalProperties": false
                 }
             },
             "required": [
                 "metadata",
                 "payload"
-            ]
+            ],
+            "additionalProperties": false
         }     
     },
     "list_schema": {
@@ -123,7 +129,8 @@
                         "packet_type",
                         "iv",
                         "tag"
-                    ]
+                    ],
+                    "additionalProperties": false
                 },
                 "payload": {
                     "type": "object",
@@ -145,13 +152,15 @@
                         "seq",
                         "nonce",
                         "signed_in_users"
-                    ]
+                    ],
+                    "additionalProperties": false
                 }
             },
             "required": [
                 "metadata",
                 "payload"
-            ]
+            ],
+            "additionalProperties": false
         }
     },
     "message_schema": {
@@ -176,7 +185,8 @@
                         "packet_type",
                         "iv",
                         "tag"
-                    ]
+                    ],
+                    "additionalProperties": false
                 },
                 "payload": {
                     "type": "object",
@@ -198,7 +208,7 @@
                         },
                         "listen_address": {
                             "type": "string"
-                        },
+                        }
                     },
                     "required": [
                         "seq",
@@ -207,13 +217,15 @@
                         "encryption_public_key",
                         "signature_verification_public_key",
                         "listen_address"
-                    ]
+                    ],
+                    "additionalProperties": false
                 }
             },
             "required": [
                 "metadata",
                 "payload"
-            ]
+            ],
+            "additionalProperties": false
         }
     },
     "errors_schema": {
