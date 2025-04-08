@@ -319,7 +319,7 @@ class ServerProtocol(Protocol):
             self.send_error("Not Authenticated", state=ProtocolState.POST_AUTH.value,nonce="nonce")
             return
         try:
-            message = parse_message(data, decrypt_fn=symmetric_encryption, key=self.symmetric_key)
+            message = parse_message(data, decrypt_fn=symmetric_decryption, key=self.symmetric_key)
         except DecryptionFailed:
             self.transport.loseConnection()
             return
@@ -339,7 +339,8 @@ class ServerProtocol(Protocol):
                         "nonce" : message.payload.nonce,
                         "signed_in_users" : json.dumps(list_response)
                     }
-                    cipher_text=symmetric_encryption(self.symmetric_key,payload,message.payload.packet_type)
+                    payload=json.dumps(payload)
+                    cipher_text=symmetric_encryption(self.symmetric_key,payload,message.metadata.packet_type)
                     response_message=Message(
                     metadata=Metadata(
                             packet_type=PacketType.LIST.value,
@@ -352,7 +353,6 @@ class ServerProtocol(Protocol):
                     ) 
                     response = message_to_dict(response_message)
                     self.transport.write(json.dumps(response).encode('utf-8'))
-                    self.state_dict[PacketType.CS_AUTH.value]=4
                     return
                 except Exception as e:
                     print(f"[ERROR] in case 1 of list_handler: {e} ")
