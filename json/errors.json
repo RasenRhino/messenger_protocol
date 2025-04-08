@@ -3,8 +3,7 @@
       "1": {
         "metadata": {
           "packet_type": "error",
-          "state": "pre_auth",
-          "error_count": 0
+          "state": "pre_auth"
         },
         "payload": {
           "message": "Shit happened",
@@ -15,15 +14,12 @@
       "2": {
         "metadata": {
           "packet_type": "error",
-          "state": "post_auth",
-          "error_count": 0
+          "state": "post_auth"
         },
         "payload": {
           "message": "Shit happened",
-          "nonce": "N1",
-          // "signature": "Sig(message||nonce)"
+          "nonce": "N1"
         }
       }
     }
   }
-  

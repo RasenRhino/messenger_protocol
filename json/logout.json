@@ -19,13 +19,7 @@
                 "seq": 3,
                 "server_challenge_solution": "sha3(c1)"
             }
-        },
-        "4": {
-            "payload": {
-                "packet_type": "logout",
-                "seq": 4,
-                "message": "Logout Successful"
-            }
         }
+ 
     }
 }

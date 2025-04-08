@@ -19,7 +19,6 @@ class Metadata:
     dh_contribution: Optional[int] = None
     iv: Optional[str] = None
     tag: Optional[str] = None
-    nonce: Optional[str] = None
     error_count: Optional[int] = None
 
 @dataclass

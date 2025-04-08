@@ -3,12 +3,13 @@
         "1": {
             "metadata": {
                 "packet_type": "cs_auth",
-                "dh_contribution": 4444,
-                "nonce": "N1"
+                "dh_contribution": 4444
+                
             },
             "payload": {
                 "seq": 1,
-                "username": "Alice"
+                "username": "Alice",
+                "nonce": "N1"
             }
         },
         "2": {

@@ -12,3 +12,8 @@ class InvalidNonce(Exception):
 
 class ChallengeResponseFailed(Exception):
     pass
+
+class DecryptionFailed(Exception):
+    pass
+class ServerError(Exception):
+    pass
