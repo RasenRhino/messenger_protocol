@@ -268,11 +268,7 @@ class ServerProtocol(Protocol):
                     "packet_type":"message",
                     "seq":2,
                     "recipient":message.payload.recipient,
-<<<<<<< Updated upstream
                     "nonce": message.payload.nonce,
-=======
-                    "nonce":H(message.payload.nonce),
->>>>>>> Stashed changes
                     "encryption_public_key":encryption_public_key,
                     "signature_verification_public_key":signature_verification_public_key,
                     "listen_address":listen_address
