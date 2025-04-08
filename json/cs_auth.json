@@ -59,7 +59,7 @@
                 "username": "Alice",
                 "encryption_public_key": "epk",
                 "signature_verification_public_key": "spk",
-                "listening_ip": "IP"
+                "listen_address": "IP:Port"
             } 
         }
     }

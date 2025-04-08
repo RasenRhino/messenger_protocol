@@ -33,7 +33,7 @@ class Payload:
     client_challenge_solution: Optional[str] = None
     encryption_public_key: Optional[str] = None
     signature_verification_public_key: Optional[str] = None
-    listening_ip: Optional[str] = None
+    listen_address: Optional[str] = None
     message: Optional[str] = None
     signature: Optional[str] = None
     cipher_text: Optional[str] = None

@@ -15,7 +15,8 @@
                 "sender_username": "Alice",
                 "nonce": "N2",
                 "encryption_public_key": "epk",
-                "signature_verification_public_key": "spk"
+                "signature_verification_public_key": "spk",
+                "listen_address": "IP:Port"
             }
         }
     }

@@ -4,7 +4,7 @@ import socket
 import base64
 from crypto_utils.core import *
 from config.config import load_dh_public_params, load_server_public_key, client_store, client_store_lock, TCP_RECV_SIZE
-from helpers.validator import *
+from client.helpers.validator import *
 from config.exceptions import *
 
 def login_step_1(client_socket, username, password, a, g, N, k):
@@ -120,21 +120,54 @@ def login_step_2(client_socket):
             payload = response.get("payload")
             validate_packet_field(payload, packet_type=packet_type, field="payload")
 
-def login_step_3(client_socket):
-    pass
+def login_step_3(client_socket, username, listen_address):
+    seq = 5
+    packet_type = "cs_auth"
+    encryption_private_key, encryption_public_key, encryption_pem_public_key = generate_ephemeral_keypairs()
+    signiature_private_key, signature_verification_public_key, signature_verification_pem_public_key = generate_ephemeral_keypairs()
 
-def login(client_socket: socket.socket):
+    with client_store_lock:
+        client_store.setdefault("self",{})["encryption_private_key"] = encryption_private_key
+        client_store.setdefault("self",{})["encryption_public_key"] = encryption_public_key
+        client_store.setdefault("self",{})["signature_private_key"] = signiature_private_key
+        client_store.setdefault("self",{})["signature_verification_public_key"] = signature_verification_public_key
+        session_key = client_store["server"]["session_key"]
+    
+    payload = {
+        "seq": seq,
+        "username": username,
+        "encryption_public_key": base64.b64encode(encryption_pem_public_key).decode(),
+        "signature_verification_public_key": base64.b64encode(signature_verification_pem_public_key).decode(),
+        "listen_address": listen_address
+    } 
+    result = symmetric_encryption(session_key, json.dumps(payload),packet_type)
+    msg = {
+        "metadata": {
+            "packet_type": packet_type,
+            "iv": result["iv"],
+            "tag": result["tag"]
+        },
+        "payload": {
+            "cipher_text": result["cipher_text"]
+        }
+    }
+    packet = json.dumps(msg).encode()
+    print(packet)
+    client_socket.sendall(packet)
+
+def login(client_socket: socket.socket, listening_port: int):
     """
     Start auth flow
     """
     username = input("Please Enter you Username: ")
     password = input("Please enter your password: ")
-    
+    listening_ip = client_socket.getsockname()[0] 
+    listen_address = f"{listening_ip}:{str(listening_port)}"
     a = generate_dh_private_exponent()
     g, N, k = load_dh_public_params()
     login_step_1(client_socket, username, password, a, g, N, k)
     login_step_2(client_socket)
-    login_step_3(client_socket)
+    login_step_3(client_socket, username, listen_address)
     
 
     

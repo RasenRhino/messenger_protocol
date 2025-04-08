@@ -1,7 +1,8 @@
 import socket
 import time
 from config.config import load_server_address, TCP_RECV_SIZE
-from sender.cs_auth import login
+from client.sender.cs_auth import login
+from crypto_utils.core import generate_random_port
 
 
 
@@ -44,6 +45,7 @@ def run_client():
     Runs in the main thread and responsible for handling user input
     and sending packets to the server and other clients.
     """
+    listening_port = generate_random_port()
     while True:
         client_socket = connect_to_server()
         if client_socket is None:
@@ -52,7 +54,7 @@ def run_client():
             continue
 
         try:
-            login(client_socket)
+            login(client_socket, listening_port)
             print("[+] Authenticated. You can now enter commands.")
             command_loop(client_socket)
         except (ConnectionResetError, BrokenPipeError, socket.error) as e:
