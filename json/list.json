@@ -1,15 +1,23 @@
 {
     "messages": {
         "1": {
-            "payload": {
+            "metadata": {
                 "packet_type": "list",
+                "iv": "iv",
+                "tag": "tag"
+            },
+            "payload": {
                 "seq": 1,
                 "nonce": "N1"
             }
         },
         "2": {
-            "payload": {
+            "metadata": {
                 "packet_type": "list",
+                "iv": "iv",
+                "tag": "tag"
+            },
+            "payload": {
                 "seq": 2,
                 "nonce": "N1",
                 "signed_in_users": ["Alice", "Bob"]

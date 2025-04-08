@@ -3,7 +3,7 @@ import time
 from config.config import load_server_address, TCP_RECV_SIZE
 from client.sender.cs_auth import login
 from crypto_utils.core import generate_random_port
-
+from client.commands import command_loop
 
 
 def connect_to_server():
@@ -12,33 +12,6 @@ def connect_to_server():
     client_socket.connect(server_address)
     print("Connecting to server")
     return client_socket
-
-def command_loop(client_socket: socket.socket):
-    try:
-        while True:
-            command = input(">> ")
-            if not command.strip():
-                continue
-
-            # You can JSON-encode the message or just send raw strings
-            msg = command.encode()
-            try:
-                client_socket.sendall(msg)
-            except socket.error as e:
-                print(f"Error sending command: {e}")
-                raise ConnectionResetError("Server socket closed")
-
-            try:
-                response = client_socket.recv(TCP_RECV_SIZE)
-                if not response:
-                    raise ConnectionResetError("Server closed the connection.")
-                print(f"Server: {response.decode()}")
-            except socket.error as e:
-                print(f"Error receiving response: {e}")
-                raise ConnectionResetError("Socket error")
-    except (ConnectionResetError, BrokenPipeError) as e:
-        print(f"[!] Lost connection in command loop: {e}")
-        raise Exception("Lost Connection in command loop")
 
 def run_client():
     """
