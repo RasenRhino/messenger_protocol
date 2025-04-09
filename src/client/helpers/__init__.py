@@ -22,7 +22,9 @@ def validate_packet_field(data, packet_type, field, seq=None):
         case "list":
             schema = load_packet_schema(schema_type="list", field=field, seq=seq) 
         case "message":
-            schema = load_packet_schema(schema_type="message", field=field, seq=seq) 
+            schema = load_packet_schema(schema_type="message", field=field, seq=seq)
+        case "logout":
+            schema = load_packet_schema(schema_type="logout", field=field, seq=seq)
     jsonschema.validate(instance=data, schema=schema)
 
 def display_message(message):

@@ -4,7 +4,7 @@ from config.config import load_server_address, TCP_RECV_SIZE
 from client.sender.cs_auth import login
 from crypto_utils.core import generate_random_port
 from client.commands import command_loop
-
+from config.exceptions import LogoutClient
 
 def connect_to_server():
     client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -25,7 +25,6 @@ def run_client():
             print("Retrying in 3 seconds...")
             time.sleep(3)
             continue
-
         try:
             login(client_socket, listening_port)
             print("[+] Authenticated. You can now enter commands.")
@@ -35,6 +34,9 @@ def run_client():
             print("Attempting to reconnect in 3 seconds...")
         except KeyboardInterrupt:
             print("Client interrupted by user.")
+            break
+        except LogoutClient:
+            print(f"Logging Out!")
             break
         except Exception as e:
             print(f"Exception OCCURED: {e}")

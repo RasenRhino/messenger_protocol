@@ -1,25 +1,26 @@
 {
     "messages": {
         "1": {
-            "payload": {
+            "metadata": {
                 "packet_type": "logout",
-                "seq": 1
+                "iv": "iv",
+                "tag": "tag"
+            },
+            "payload": {
+                "seq": 1,
+                "nonce": "N1"
             }
         },
         "2": {
-            "payload": {
+            "metadata": {
                 "packet_type": "logout",
+                "iv": "iv",
+                "tag": "tag"
+            },
+            "payload": {
                 "seq": 2,
-                "server_challenge": "c1"
-            }
-        },
-        "3": {
-            "payload": {
-                "packet_type": "logout",
-                "seq": 3,
-                "server_challenge_solution": "sha3(c1)"
+                "nonce": "N1"
             }
         }
- 
     }
 }
