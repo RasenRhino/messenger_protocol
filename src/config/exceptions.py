@@ -17,3 +17,6 @@ class DecryptionFailed(Exception):
     pass
 class ServerError(Exception):
     pass
+
+class LogoutClient(Exception):
+    pass

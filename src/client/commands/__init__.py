@@ -3,7 +3,7 @@ import time
 import sys
 import inspect
 from config.config import TCP_RECV_SIZE
-from client.commands.commands import send_list_packet, send_message_packet
+from client.commands.commands import send_list_packet, send_message_packet, send_logout_packet
 
 def command_loop(client_socket: socket.socket):
     try:
@@ -18,6 +18,8 @@ def command_loop(client_socket: socket.socket):
                     recipient = command[1]
                     message = " ".join(command[2:])
                     send_message_packet(client_socket, recipient, message)
+                case "logout":
+                    send_logout_packet(client_socket)
                 case _:
                     error = inspect.cleandoc(f"""
                             +> Operation {operation} is not supported

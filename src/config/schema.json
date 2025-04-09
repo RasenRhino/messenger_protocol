@@ -228,6 +228,55 @@
             "additionalProperties": false
         }
     },
+    "logout_schema": {
+        "2": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "type": "object",
+                    "properties": {
+                        "packet_type": {
+                            "type": "string",
+                            "const": "logout"
+                        },
+                        "iv": {
+                            "type": "string"
+                        },
+                        "tag": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "packet_type",
+                        "iv",
+                        "tag"
+                    ],
+                    "additionalProperties": false
+                },
+                "payload": {
+                    "type": "object",
+                    "properties": {
+                        "seq": {
+                            "type": "integer"
+                        },
+                        "nonce": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "seq",
+                        "nonce"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "metadata",
+                "payload"
+            ],
+            "additionalProperties": false
+        }
+    },
     "errors_schema": {
         "pre_auth": {
             "type": "object",

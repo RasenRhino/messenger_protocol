@@ -33,4 +33,6 @@ def load_packet_schema(schema_type, field, seq=None):
             return schemas["list_schema"][str(seq)]["properties"][field]
         case "message":
             return schemas["message_schema"][str(seq)]["properties"][field]
+        case "logout":
+            return schemas["logout_schema"][str(seq)]["properties"][field]
         
