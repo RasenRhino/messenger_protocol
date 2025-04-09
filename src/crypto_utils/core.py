@@ -7,9 +7,8 @@ import os
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import base64
 import hashlib
-from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey, Ed25519PublicKey
+from cryptography.exceptions import InvalidSignature, InvalidTag
 
-from cryptography.hazmat.primitives.asymmetric import ec
 def load_private_key(file_path: str):
     """
     Load a private key from a file. 
@@ -54,11 +53,31 @@ def asymmetric_decryption(private_key, ciphertext: bytes) -> bytes:
         )
     )
     return plaintext
-def sign_payload(payload: bytes, private_key: Ed25519PrivateKey):
-    return private_key.sign(payload,ec.ECDSA(hashes.SHA256()))
 
-def verify_signature(payload: bytes, signature: bytes, public_key: Ed25519PublicKey):
-    public_key.verify(signature, payload,ec.ECDSA(hashes.SHA256()))
+def generate_signature(payload: str, private_key: bytes):
+    return base64.b64encode(private_key.sign(
+        payload.encode(),
+        padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
+        hashes.SHA256()
+    )).decode()
+
+def verify_signature(payload: str, signature: str, public_key: bytes):
+    is_valid = False
+    try:
+        public_key.verify(
+            base64.b64decode(signature),
+            payload.encode(),
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH
+            ),
+            hashes.SHA256()
+        )
+        is_valid = True
+    except InvalidSignature:
+        print("Signature is invalid")
+    finally:
+        return is_valid
 
 def generate_nonce():
     return secrets.token_hex(16)   
