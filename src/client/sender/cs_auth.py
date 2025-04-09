@@ -3,7 +3,7 @@ import json
 import socket
 import base64
 from crypto_utils.core import *
-from config.config import load_dh_public_params, load_server_public_key, client_store, client_store_lock, TCP_RECV_SIZE
+from config.config import load_dh_public_params, load_server_public_keys, client_store, client_store_lock, TCP_RECV_SIZE
 from client.helpers import *
 from config.exceptions import *
 
@@ -11,14 +11,14 @@ def login_step_1(client_socket, username, password, a, g, N, k):
     seq = 1
     A = client_srp_dh_public_contribution(g, a, N)
     nonce = generate_nonce()
-    server_public_key = load_server_public_key()
+    server_encryption_public_key, _ = load_server_public_keys()
     
     payload = {
         "seq": seq,
         "username": username,
         "nonce": nonce
     }
-    encrypted_payload = asymmetric_encryption(server_public_key, json.dumps(payload).encode())
+    encrypted_payload = asymmetric_encryption(server_encryption_public_key, json.dumps(payload).encode())
     encoded_payload = base64.b64encode(encrypted_payload).decode()
     msg = {
         "metadata": {
@@ -61,10 +61,7 @@ def login_step_1(client_socket, username, password, a, g, N, k):
                 client_store.setdefault("server",{})["server_challenge"] = decrypted_payload["server_challenge"]
         # Error cases need to be tweaked later
         case "error":
-            metadata = response.get("metadata")
-            validate_packet_field(metadata, packet_type=packet_type, field="metadata")
-            payload = response.get("payload")
-            validate_packet_field(payload, packet_type=packet_type, field="payload")
+           handle_pre_auth_error(response, nonce)
 
 def login_step_2(client_socket):
     seq = 3
@@ -116,10 +113,7 @@ def login_step_2(client_socket):
                 raise ChallengeResponseFailed()
         # Error cases need to be tweaked later
         case "error":
-            metadata = response.get("metadata")
-            validate_packet_field(metadata, packet_type=packet_type, field="metadata")
-            payload = response.get("payload")
-            validate_packet_field(payload, packet_type=packet_type, field="payload")
+            handle_pre_auth_error(response)
 
 def login_step_3(client_socket, username, listen_address):
     seq = 5

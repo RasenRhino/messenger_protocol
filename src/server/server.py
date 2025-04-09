@@ -20,10 +20,10 @@ import base64
 import signal
 from config.exceptions import *
 MAX_ERRORS = 3
-PRIVATE_KEY_ENCRYPTION = f"{ROOT_DIR}/server/encryption_keys/private_key_encryption.pem"
-PUBLIC_KEY_ENCRYPTION = f"{ROOT_DIR}/server/encryption_keys/public_key_encryption.pem" 
-PRIVATE_KEY_SIGNING= f"{ROOT_DIR}/server/signing_keys/private_key_signing.pem"
-PUBLIC_KEY_SIGNING= f"{ROOT_DIR}/server/signing_keys/public_key_signing.pem" 
+PRIVATE_KEY_ENCRYPTION = f"{ROOT_DIR}/config/encryption_keys/private_key_encryption.pem"
+PUBLIC_KEY_ENCRYPTION = f"{ROOT_DIR}/config/encryption_keys/public_key_encryption.pem" 
+PRIVATE_KEY_SIGNING= f"{ROOT_DIR}/config/signing_keys/private_key_signing.pem"
+PUBLIC_KEY_SIGNING= f"{ROOT_DIR}/config/signing_keys/public_key_signing.pem" 
 PUBLIC_PARAMS=f"{ROOT_DIR}/public_params.json"
 def message_to_dict(message: Message) -> dict:
     return strip_none(asdict(message))
@@ -102,7 +102,9 @@ class ServerProtocol(Protocol):
         # Decide the error message format based on the state
         error_msg = self.create_error_message(message_str, state, nonce)
         if state == ProtocolState.PRE_AUTH.value:
-            error_msg.payload.signature="sig"
+            signature = generate_signature(f"{message_str}{nonce}",self.factory.private_key_signing)
+            print(signature)
+            error_msg.payload.signature=signature
 
         # Encrypt the message if we're in the post-auth state
         if state == ProtocolState.POST_AUTH.value:
@@ -149,8 +151,7 @@ class ServerProtocol(Protocol):
 
         except Exception as e:
             print(f"Exception at cs_auth_handler : {e}")
-            self.send_error("Invalid message format for authentication request")
-            self.transport.lossConnection()
+            self.transport.loseConnection()
             return
         if PacketType.CS_AUTH.value not in self.state_dict:
             if message.payload.seq != 1:
@@ -272,7 +273,7 @@ class ServerProtocol(Protocol):
             message = parse_message(data, decrypt_fn=symmetric_decryption, key=self.symmetric_key)
         except Exception as e:
             print(f"Exception at message handler: {e}")
-            self.send_error("Invalid message format for message request", nonce=message.payload.nonce)
+            # self.send_error("Invalid message format for message request", nonce=message.payload.nonce)
             self.transport.loseConnection()
             return
 
@@ -372,7 +373,7 @@ class ServerProtocol(Protocol):
             message = parse_message(data, decrypt_fn=symmetric_decryption, key=self.symmetric_key)
         except Exception as e:
             print(f"Exception at message handler: {e}")
-            self.send_error("Invalid message format")
+            # self.send_error("Invalid message format")
             self.transport.loseConnection()
             return
         match message.payload.seq:
@@ -450,9 +451,9 @@ class ServerFactory(Factory):
 
         try:
             self.private_key_encryption = load_private_key(PRIVATE_KEY_ENCRYPTION)
-            self.public_key_encryption = load_public_key(PUBLIC_KEY_ENCRYPTION)
+            # self.public_key_encryption = load_public_key(PUBLIC_KEY_ENCRYPTION)
             self.private_key_signing = load_private_key(PRIVATE_KEY_SIGNING)
-            self.public_key_signing = load_public_key(PUBLIC_KEY_SIGNING)
+            # self.public_key_signing = load_public_key(PUBLIC_KEY_SIGNING)
         except Exception as e:
             print(f"[!] Key loading failed: {e}")
             sys.exit(1)
