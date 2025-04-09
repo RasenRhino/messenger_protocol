@@ -339,7 +339,7 @@ class ServerProtocol(Protocol):
                     payload={
                         "seq" : 2,
                         "nonce" : message.payload.nonce,
-                        "signed_in_users" : json.dumps(list_response)
+                        "signed_in_users" : list_response
                     }
                     payload=json.dumps(payload)
                     cipher_text=symmetric_encryption(self.symmetric_key,payload,message.metadata.packet_type)
@@ -360,10 +360,6 @@ class ServerProtocol(Protocol):
                     print(f"[ERROR] in case 1 of list_handler: {e} ")
                     self.send_error("Something went wrong with list request",state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
                     return
- 
-
-                
-
             case _:
                 self.send_error("Unknown sequence step", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
  
