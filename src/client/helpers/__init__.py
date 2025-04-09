@@ -19,6 +19,10 @@ def validate_packet_field(data, packet_type, field, seq=None):
             #     raise InvalidErrorPacket("Server sent an error packet without state")
         case "cs_auth":
             schema = load_packet_schema(schema_type="cs_auth", field=field, seq=seq) 
+        case "list":
+            schema = load_packet_schema(schema_type="list", field=field, seq=seq) 
+        case "message":
+            schema = load_packet_schema(schema_type="message", field=field, seq=seq) 
     jsonschema.validate(instance=data, schema=schema)
 
 def display_message(message):

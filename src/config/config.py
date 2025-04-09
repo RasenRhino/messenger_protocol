@@ -29,4 +29,8 @@ def load_packet_schema(schema_type, field, seq=None):
             return schemas["errors_schema"]["pre_auth"]["properties"][field]
         case "cs_auth":
             return schemas["cs_auth_schema"][str(seq)]["properties"][field]
+        case "list":
+            return schemas["list_schema"][str(seq)]["properties"][field]
+        case "message":
+            return schemas["message_schema"][str(seq)]["properties"][field]
         
