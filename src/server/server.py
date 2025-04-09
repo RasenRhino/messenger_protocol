@@ -94,7 +94,9 @@ class ServerProtocol(Protocol):
         self.username = None
         print(f"[-] Connection lost. Active: {self.factory.numProtocols}")
 
-    def send_error(self, message_str, state,nonce):
+    def send_error(self, message_str, state,nonce=None):
+        if(nonce==None):
+            nonce=generate_nonce()
         if (state == ProtocolState.POST_AUTH.value):
             self.error_count += 1
         error_msg = Message(
@@ -258,7 +260,7 @@ class ServerProtocol(Protocol):
         print(f"Received valid cs_auth packet seq={message.payload.seq}")
     def message_handler(self,data):
         if((PacketType.CS_AUTH.value not in self.state_dict.keys()) or (self.state_dict[PacketType.CS_AUTH.value]!=0)):
-            self.send_error("Not Authenticated", state=ProtocolState.POST_AUTH.value,nonce="nonce")
+            self.send_error("Not Authenticated", state=ProtocolState.POST_AUTH.value)
             return
         try:
             message = parse_message(data, decrypt_fn=symmetric_encryption, key=self.symmetric_key)
@@ -316,7 +318,7 @@ class ServerProtocol(Protocol):
                 return 
     def list_handler(self,data):
         if((PacketType.CS_AUTH.value not in self.state_dict.keys()) or (self.state_dict[PacketType.CS_AUTH.value]!=0)):
-            self.send_error("Not Authenticated", state=ProtocolState.POST_AUTH.value,nonce="nonce")
+            self.send_error("Not Authenticated", state=ProtocolState.POST_AUTH.value)
             return
         try:
             message = parse_message(data, decrypt_fn=symmetric_decryption, key=self.symmetric_key)
@@ -385,12 +387,12 @@ class ServerProtocol(Protocol):
                 self.error_message_hanlder(request)
             
             else:
-                self.send_error("Unsupported packet_type", state=PacketType.CS_AUTH.value,nonce='nonce')
+                self.send_error("Unsupported packet_type", state=PacketType.CS_AUTH.value)
                 raise Exception
 
         except Exception as e:
             print("[Exception]:", str(e))
-            self.send_error("Malformed JSON or bad structure", state=PacketType.CS_AUTH.value,nonce="")
+            self.send_error("Malformed JSON or bad structure", state=PacketType.CS_AUTH.value)
 
 
 class ServerFactory(Factory):
