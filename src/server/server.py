@@ -91,44 +91,54 @@ class ServerProtocol(Protocol):
         if(PacketType.CS_AUTH.value not in self.state_dict.keys() or self.state_dict[PacketType.CS_AUTH.value]!=0):
             return False
         return True
-    def send_error(self, message_str, state=None,nonce=None):
-        if(state==None):
-            if(self.check_authentication()):
-                state=ProtocolState.POST_AUTH.value
-            else:
-                state=ProtocolState.PRE_AUTH.value
-        if(nonce==None):
-            nonce=generate_nonce()
-        if (state == ProtocolState.POST_AUTH.value):
-            self.error_count += 1
-        error_msg = Message(
-            metadata=Metadata(packet_type=PacketType.ERROR, state=state, error_count=self.error_count),
-            payload=Payload(
-                message=message_str,
-                nonce=nonce
-            )
-        )
-        if(state==ProtocolState.PRE_AUTH.value):
-            error_dict=message_to_dict(error_msg)
-            payload=json.dumps(error_dict).encode('utf-8')
-            signature=sign_payload(payload,self.factory.private_key_signing)
-            error_msg= Message(
-            metadata=Metadata(packet_type=PacketType.ERROR, state=state, error_count=self.error_count),
-            payload=Payload(
-                message=message_str,
-                signature=signature,
-                nonce=nonce
-                )
-            )
+    def send_error(self, message_str, state=None, nonce=None):
+        """Send an error message."""
+        if state is None:
+            state = ProtocolState.POST_AUTH.value if self.check_authentication() else ProtocolState.PRE_AUTH.value
+
+        if nonce is None:
+            nonce = generate_nonce()
+
+        # Decide the error message format based on the state
+        error_msg = self.create_error_message(message_str, state, nonce)
+        if state == ProtocolState.PRE_AUTH.value:
+            error_msg.payload.signature="sig"
+
+        # Encrypt the message if we're in the post-auth state
+        if state == ProtocolState.POST_AUTH.value:
+            encrypted_msg = self.encrypt_error_message(error_msg, nonce)
+            error_msg.payload.cipher_text = encrypted_msg['cipher_text']
+            error_msg.metadata.iv = encrypted_msg['iv']
+            error_msg.metadata.tag = encrypted_msg['tag']
+            error_msg.payload.message = None
+            error_msg.payload.nonce = None             
         cleaned = message_to_dict(error_msg)
         self.transport.write(json.dumps(cleaned).encode('utf-8'))
-        if (self.error_count >= MAX_ERRORS or state==ProtocolState.PRE_AUTH.value):
-            if(state!=ProtocolState.PRE_AUTH.value):
-                print(f"[!] Too many errors. Closing connection.")
-            else:
-                print(f"[!] ERROR in Auth. Closing connection.")
-                self.transport.loseConnection()
-                return
+
+        # If there are too many errors or the state is pre-auth, close the connection
+        if state == ProtocolState.PRE_AUTH.value:
+            print("[!] ERROR in Auth. Closing connection.")
+            self.transport.loseConnection()
+
+    def create_error_message(self, message_str, state, nonce):
+        """Create the error message structure."""
+        return Message(
+            metadata=Metadata(packet_type=PacketType.ERROR, state=state),
+            payload=Payload(
+                message=message_str,
+                nonce=nonce,
+                cipher_text=None,
+                signature=None,
+            )
+        )
+
+    def encrypt_error_message(self, error_msg, nonce):
+        """Encrypt the error message payload."""
+        error_dict = message_to_dict(error_msg)
+        payload = json.dumps(error_dict).encode('utf-8')
+        encrypted_payload = symmetric_encryption(self.symmetric_key, payload, error_msg.metadata.packet_type)
+        return encrypted_payload
+
 
     def cs_auth_handler(self, data):
         try:
@@ -363,6 +373,7 @@ class ServerProtocol(Protocol):
         except Exception as e:
             print(f"Exception at message handler: {e}")
             self.send_error("Invalid message format")
+            self.transport.loseConnection()
             return
         match message.payload.seq:
             case 1:
