@@ -366,8 +366,48 @@ class ServerProtocol(Protocol):
  
         
         return
-    def logout_handler():
-        return
+    def logout_handler(self,data):
+        if((PacketType.CS_AUTH.value not in self.state_dict.keys()) or (self.state_dict[PacketType.CS_AUTH.value]!=0)):
+            self.send_error("Not Authenticated")
+            return
+        try:
+            message = parse_message(data, decrypt_fn=symmetric_decryption, key=self.symmetric_key)
+        except Exception as e:
+            print(f"Exception at message handler: {e}")
+            self.send_error("Invalid message format")
+            return
+        match message.payload.seq:
+            case 1:
+                try:
+                    payload={
+                        "seq" : 2,
+                        "nonce" : message.payload.nonce
+                    }
+                    payload=json.dumps(payload)
+                    cipher_text=symmetric_encryption(self.symmetric_key,payload,message.metadata.packet_type)
+                    response_message=Message(
+                    metadata=Metadata(
+                            packet_type=PacketType.LOGOUT.value,
+                            iv=cipher_text['iv'],
+                            tag=cipher_text['tag'],
+                            ),
+                            payload=Payload(
+                                cipher_text=cipher_text['cipher_text']
+                            )
+                    )
+                    response = message_to_dict(response_message)
+                    self.transport.write(json.dumps(response).encode('utf-8'))
+                    self.transport.loseConnection()
+                    return
+
+                except Exception as e:
+                    print(f"[ERROR] in case 1 of logout_handler: {e} ")
+                    self.send_error("Something went wrong with logout",nonce=message.payload.nonce)
+                    return
+            case _:
+                self.send_error("Unknown sequence step")
+                return
+        return 
     def dataReceived(self, data):
         try:
             request = json.loads(data.decode('utf-8'))
@@ -379,7 +419,7 @@ class ServerProtocol(Protocol):
             elif packet_type == PacketType.LIST.value:
                 self.list_handler(request)
             elif packet_type == PacketType.LOGOUT.value:
-                self.logout_handler()
+                self.logout_handler(request)
             elif packet_type == PacketType.ERROR.value:
                 self.error_message_hanlder(request)
             
