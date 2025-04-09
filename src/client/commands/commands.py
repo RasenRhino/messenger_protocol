@@ -100,6 +100,7 @@ def send_message_packet(client_socket, recipient, message):
             if nonce != decrypted_payload["nonce"]:
                 raise InvalidNonce()
             validate_packet_field(decrypted_payload, packet_type=packet_type, field="payload", seq=current_seq)
+           #fix this Ritik 
             display_message(f"Recieved Details of Bob: {decrypted_payload}")
             
         # Error cases need to be tweaked later
