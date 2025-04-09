@@ -263,7 +263,7 @@ class ServerProtocol(Protocol):
             self.send_error("Not Authenticated", state=ProtocolState.POST_AUTH.value)
             return
         try:
-            message = parse_message(data, decrypt_fn=symmetric_encryption, key=self.symmetric_key)
+            message = parse_message(data, decrypt_fn=symmetric_decryption, key=self.symmetric_key)
         except DecryptionFailed:
             self.transport.loseConnection()
             return
@@ -275,16 +275,6 @@ class ServerProtocol(Protocol):
             self.send_error("Invalid message format", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
             return
 
-        if PacketType.MESSAGE.value not in self.state_dict:
-            if message.payload.seq != 1:
-                self.send_error("Invalid sequence number", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
-                return
-            self.state_dict[PacketType.MESSAGE.value] = 1
-
-        else:
-            if message.payload.seq <= self.state_dict[PacketType.CS_AUTH.value] or message.payload.seq > self.state_dict[PacketType.CS_AUTH.value]+1:
-                self.send_error("Invalid sequence number", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
-                return
         if (message.payload.recipient not in self.factory.userlist.keys()):
             self.send_error("Recipient could not be found", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
         match message.payload.seq:
@@ -294,7 +284,6 @@ class ServerProtocol(Protocol):
                 signature_verification_public_key=self.factory.userlist[recipient][signature_verification_public_key]
                 listen_address=self.factory.userlist[recipient][listen_address]
                 payload={
-                    "packet_type":"message",
                     "seq":2,
                     "recipient":message.payload.recipient,
                     "nonce": message.payload.nonce,
@@ -303,9 +292,14 @@ class ServerProtocol(Protocol):
                     "listen_address":listen_address
                 } 
                 payload=json.dumps(payload) 
-                cipher_text=symmetric_encryption(self.symmetric_key,payload,message.payload.packet_type)
+                cipher_text=symmetric_encryption(self.symmetric_key,payload,message.metadata.packet_type)
                 response_message=Message(
-                    Payload(
+                    metadata=Metadata(
+                        packet_type=PacketType.MESSAGE.value,
+                        iv=cipher_text['iv'],
+                        tag=cipher_text['tag'],
+                    ),
+                    payload=Payload(
                         cipher_text=cipher_text['cipher_text']
                     )
                 ) 
