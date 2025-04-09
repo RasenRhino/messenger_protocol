@@ -315,11 +315,11 @@ class ServerProtocol(Protocol):
                 self.transport.write(json.dumps(response).encode('utf-8'))
                 return
             case _:
-                self.send_error("Unknown sequence step", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
+                self.send_error("Unknown sequence step" ,nonce=message.payload.nonce)
                 return 
     def list_handler(self,data):
         if((PacketType.CS_AUTH.value not in self.state_dict.keys()) or (self.state_dict[PacketType.CS_AUTH.value]!=0)):
-            self.send_error("Not Authenticated", state=ProtocolState.POST_AUTH.value)
+            self.send_error("Not Authenticated")
             return
         try:
             message = parse_message(data, decrypt_fn=symmetric_decryption, key=self.symmetric_key)
@@ -331,7 +331,7 @@ class ServerProtocol(Protocol):
             return
         except Exception as e:
             print(f"Exception at message handler: {e}")
-            self.send_error("Invalid message format", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
+            self.send_error("Invalid message format" ,nonce=message.payload.nonce)
             return
         match message.payload.seq:
             case 1:
@@ -359,10 +359,10 @@ class ServerProtocol(Protocol):
                     return
                 except Exception as e:
                     print(f"[ERROR] in case 1 of list_handler: {e} ")
-                    self.send_error("Something went wrong with list request",state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
+                    self.send_error("Something went wrong with list request",nonce=message.payload.nonce)
                     return
             case _:
-                self.send_error("Unknown sequence step", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
+                self.send_error("Unknown sequence step", nonce=message.payload.nonce)
  
         
         return
@@ -389,7 +389,7 @@ class ServerProtocol(Protocol):
 
         except Exception as e:
             print("[Exception]:", str(e))
-            self.send_error("Malformed JSON or bad structure")
+            self.send_error(f"Invalid message format : {e}" )
 
 
 class ServerFactory(Factory):
@@ -451,6 +451,7 @@ def init_db():
     con = sqlite3.connect("store.db")
     try:
         cur = con.cursor()
+        cur.close
     except Exception as e:
         print(f"Cannot find DB : {e}")
 
