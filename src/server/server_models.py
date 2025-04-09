@@ -9,7 +9,7 @@ class User:
     username: str
     encryption_public_key: str
     signing_public_key: str
-    address: str
+    listen_address: str
 
 @dataclass
 class Metadata:

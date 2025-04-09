@@ -93,8 +93,16 @@ class ServerProtocol(Protocol):
            del self.factory.userlist[self.username] 
         self.username = None
         print(f"[-] Connection lost. Active: {self.factory.numProtocols}")
-
-    def send_error(self, message_str, state,nonce=None):
+    def check_authentication(self):
+        if(PacketType.CS_AUTH.value not in self.state_dict.keys() or self.state_dict[PacketType.CS_AUTH.value]!=0):
+            return False
+        return True
+    def send_error(self, message_str, state=None,nonce=None):
+        if(state==None):
+            if(self.check_authentication()):
+                state=ProtocolState.POST_AUTH.value
+            else:
+                state=ProtocolState.PRE_AUTH.value
         if(nonce==None):
             nonce=generate_nonce()
         if (state == ProtocolState.POST_AUTH.value):
@@ -263,7 +271,7 @@ class ServerProtocol(Protocol):
             self.send_error("Not Authenticated", state=ProtocolState.POST_AUTH.value)
             return
         try:
-            message = parse_message(data, decrypt_fn=symmetric_encryption, key=self.symmetric_key)
+            message = parse_message(data, decrypt_fn=symmetric_decryption, key=self.symmetric_key)
         except DecryptionFailed:
             self.transport.loseConnection()
             return
@@ -275,26 +283,15 @@ class ServerProtocol(Protocol):
             self.send_error("Invalid message format", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
             return
 
-        if PacketType.MESSAGE.value not in self.state_dict:
-            if message.payload.seq != 1:
-                self.send_error("Invalid sequence number", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
-                return
-            self.state_dict[PacketType.MESSAGE.value] = 1
-
-        else:
-            if message.payload.seq <= self.state_dict[PacketType.CS_AUTH.value] or message.payload.seq > self.state_dict[PacketType.CS_AUTH.value]+1:
-                self.send_error("Invalid sequence number", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
-                return
         if (message.payload.recipient not in self.factory.userlist.keys()):
             self.send_error("Recipient could not be found", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
         match message.payload.seq:
             case 1:
                 recipient=message.payload.recipient
-                encryption_public_key = self.factory.userlist[recipient][encryption_public_key] 
-                signature_verification_public_key=self.factory.userlist[recipient][signature_verification_public_key]
-                listen_address=self.factory.userlist[recipient][listen_address]
+                encryption_public_key = self.factory.userlist[recipient].encryption_public_key
+                signature_verification_public_key=self.factory.userlist[recipient].signing_public_key
+                listen_address=self.factory.userlist[recipient].listen_address
                 payload={
-                    "packet_type":"message",
                     "seq":2,
                     "recipient":message.payload.recipient,
                     "nonce": message.payload.nonce,
@@ -303,22 +300,26 @@ class ServerProtocol(Protocol):
                     "listen_address":listen_address
                 } 
                 payload=json.dumps(payload) 
-                cipher_text=symmetric_encryption(self.symmetric_key,payload,message.payload.packet_type)
+                cipher_text=symmetric_encryption(self.symmetric_key,payload,message.metadata.packet_type)
                 response_message=Message(
-                    Payload(
+                    metadata=Metadata(
+                        packet_type=PacketType.MESSAGE.value,
+                        iv=cipher_text['iv'],
+                        tag=cipher_text['tag'],
+                    ),
+                    payload=Payload(
                         cipher_text=cipher_text['cipher_text']
                     )
                 ) 
                 response = message_to_dict(response_message)
                 self.transport.write(json.dumps(response).encode('utf-8'))
-                del self.state_dict[PacketType.MESSAGE.value]
                 return
             case _:
-                self.send_error("Unknown sequence step", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
+                self.send_error("Unknown sequence step" ,nonce=message.payload.nonce)
                 return 
     def list_handler(self,data):
         if((PacketType.CS_AUTH.value not in self.state_dict.keys()) or (self.state_dict[PacketType.CS_AUTH.value]!=0)):
-            self.send_error("Not Authenticated", state=ProtocolState.POST_AUTH.value)
+            self.send_error("Not Authenticated")
             return
         try:
             message = parse_message(data, decrypt_fn=symmetric_decryption, key=self.symmetric_key)
@@ -330,7 +331,7 @@ class ServerProtocol(Protocol):
             return
         except Exception as e:
             print(f"Exception at message handler: {e}")
-            self.send_error("Invalid message format", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
+            self.send_error("Invalid message format" ,nonce=message.payload.nonce)
             return
         match message.payload.seq:
             case 1:
@@ -358,10 +359,10 @@ class ServerProtocol(Protocol):
                     return
                 except Exception as e:
                     print(f"[ERROR] in case 1 of list_handler: {e} ")
-                    self.send_error("Something went wrong with list request",state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
+                    self.send_error("Something went wrong with list request",nonce=message.payload.nonce)
                     return
             case _:
-                self.send_error("Unknown sequence step", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
+                self.send_error("Unknown sequence step", nonce=message.payload.nonce)
  
         
         return
@@ -383,12 +384,12 @@ class ServerProtocol(Protocol):
                 self.error_message_hanlder(request)
             
             else:
-                self.send_error("Unsupported packet_type", state=PacketType.CS_AUTH.value)
+                self.send_error("Unsupported packet_type" )
                 raise Exception
 
         except Exception as e:
             print("[Exception]:", str(e))
-            self.send_error("Malformed JSON or bad structure", state=PacketType.CS_AUTH.value)
+            self.send_error(f"Invalid message format : {e}" )
 
 
 class ServerFactory(Factory):
@@ -436,7 +437,7 @@ class ServerFactory(Factory):
         username=username,
         encryption_public_key=enc_key,
         signing_public_key=sign_key,
-        address=address,
+        listen_address=address,
         )
     def generate_user_list(self):
         list_response=[]
@@ -450,6 +451,7 @@ def init_db():
     con = sqlite3.connect("store.db")
     try:
         cur = con.cursor()
+        cur.close
     except Exception as e:
         print(f"Cannot find DB : {e}")
 
