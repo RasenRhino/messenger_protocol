@@ -125,7 +125,7 @@ class ServerProtocol(Protocol):
     def create_error_message(self, message_str, state, nonce):
         """Create the error message structure."""
         return Message(
-            metadata=Metadata(packet_type=PacketType.ERROR, state=state),
+            metadata=Metadata(packet_type=PacketType.ERROR.value, state=state),
             payload=Payload(
                 message=message_str,
                 nonce=nonce,
@@ -137,7 +137,7 @@ class ServerProtocol(Protocol):
     def encrypt_error_message(self, error_msg, nonce):
         """Encrypt the error message payload."""
         error_dict = message_to_dict(error_msg)
-        payload = json.dumps(error_dict).encode('utf-8')
+        payload = json.dumps(error_dict['payload'])
         encrypted_payload = symmetric_encryption(self.symmetric_key, payload, error_msg.metadata.packet_type)
         return encrypted_payload
 
@@ -220,13 +220,16 @@ class ServerProtocol(Protocol):
                     server_challenge_hash=H(self.cs_auth_state['2']['server_challenge'])
                     if(server_challenge_hash != message.payload.server_challenge_solution):
                         self.send_error("Incorrect response to server challenge", nonce=message.payload.nonce)
+                        return
                     
                     client_challenge_solution=H(message.payload.client_challenge)
                     payload={
                                 "seq":4,
+                                "nonce": message.payload.nonce,
                                 "client_challenge_solution":client_challenge_solution
                             }
                     payload=json.dumps(payload)
+                    print(payload)
                     cipher_text=symmetric_encryption(self.symmetric_key,payload,message.metadata.packet_type)
                     response_message = Message(
                         metadata=Metadata(
@@ -279,6 +282,7 @@ class ServerProtocol(Protocol):
 
         if (message.payload.recipient not in self.factory.userlist.keys()):
             self.send_error("Recipient could not be found", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
+            return
         match message.payload.seq:
             case 1:
                 try:

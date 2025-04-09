@@ -89,12 +89,16 @@
                         "seq": {
                             "type": "integer"
                         },
+                        "nonce": {
+                            "type": "string"
+                        },
                         "client_challenge_solution": {
                             "type": "integer"
                         }
                     },
                     "required": [
                         "seq",
+                        "nonce",
                         "client_challenge_solution"
                     ],
                     "additionalProperties": false
@@ -313,7 +317,48 @@
                             "type": "string"
                         }
                     },
-                    "required": ["message", "signature"],
+                    "required": ["message", "nonce", "signature"],
+                    "additionalProperties": false
+                }
+            },
+            "required": ["metadata", "payload"],
+            "additionalProperties": false
+        },
+        "post_auth": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "type": "object",
+                    "properties": {
+                        "packet_type": {
+                            "type": "string",
+                            "const": "error"
+                        },
+                        "state": {
+                            "type": "string",
+                            "enum": ["pre_auth", "post_auth"]
+                        },
+                        "iv": {
+                            "type": "string"
+                        },
+                        "tag": {
+                            "type": "string"
+                        }
+                    },
+                    "required": ["packet_type", "state", "iv", "tag"],
+                    "additionalProperties": false
+                },
+                "payload": {
+                    "type": "object",
+                    "properties": {
+                        "message": {
+                            "type": "string"
+                        },
+                        "nonce": {
+                            "type": "string"
+                        }
+                    },
+                    "required": ["message", "nonce"],
                     "additionalProperties": false
                 }
             },

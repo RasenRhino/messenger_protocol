@@ -2,7 +2,7 @@ import json
 from client.helpers import display_message
 from crypto_utils.core import generate_nonce, symmetric_encryption, symmetric_decryption
 from config.config import client_store, client_store_lock, TCP_RECV_SIZE
-from client.helpers import validate_packet_field
+from client.helpers import validate_packet_field, handle_post_auth_error
 from config.exceptions import *
 
 def send_list_packet(client_socket):
@@ -52,10 +52,7 @@ def send_list_packet(client_socket):
             
         # Error cases need to be tweaked later
         case "error":
-            metadata = response.get("metadata")
-            validate_packet_field(metadata, packet_type=packet_type, field="metadata")
-            payload = response.get("payload")
-            validate_packet_field(payload, packet_type=packet_type, field="payload")
+            handle_post_auth_error(response, nonce)
 def send_message_packet(client_socket, recipient, message):
     seq = 1
     packet_type = "message"
@@ -104,10 +101,7 @@ def send_message_packet(client_socket, recipient, message):
             
         # Error cases need to be tweaked later
         case "error":
-            metadata = response.get("metadata")
-            validate_packet_field(metadata, packet_type=packet_type, field="metadata")
-            payload = response.get("payload")
-            validate_packet_field(payload, packet_type=packet_type, field="payload")
+           handle_post_auth_error(response, nonce)
 
 def send_logout_packet(client_socket):
     seq = 1

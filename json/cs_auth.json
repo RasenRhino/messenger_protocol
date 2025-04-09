@@ -34,6 +34,7 @@
             },
             "payload": {
                 "seq": 3,
+                "nonce": "N1",
                 "server_challenge_solution": "sha3(c1)",
                 "client_challenge": "c2"
             } 

@@ -30,6 +30,8 @@ def load_packet_schema(schema_type, field, seq=None):
     match schema_type:
         case "error_pre_auth":
             return schemas["errors_schema"]["pre_auth"]["properties"][field]
+        case "error_post_auth":
+            return schemas["errors_schema"]["post_auth"]["properties"][field]
         case "cs_auth":
             return schemas["cs_auth_schema"][str(seq)]["properties"][field]
         case "list":
