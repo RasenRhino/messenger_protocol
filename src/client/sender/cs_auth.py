@@ -87,7 +87,7 @@ def login_step_2(client_socket):
             "tag": result["tag"]
         },
         "payload": {
-            "cipher_text": result["cipher_text"] + "test"
+            "cipher_text": result["cipher_text"]
         }
     }
 
