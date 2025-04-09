@@ -48,24 +48,18 @@ def strip_none(obj):
 
 def parse_message(data: dict, decrypt_fn=None, key=None, **kwargs) -> Message:
     metadata = Metadata(**data['metadata'])
-    try:
-        if decrypt_fn == symmetric_decryption:
-            encrypted_payload = data['payload']['cipher_text']
-            iv = data['metadata']['iv']
-            tag = data['metadata']['tag']
-            aad = data['metadata']['packet_type']
-            decrypted_bytes = decrypt_fn(key, encrypted_payload, iv, tag, aad)
-            payload_data = json.loads(decrypted_bytes.decode('utf-8'))
-        elif decrypt_fn == asymmetric_decryption:
-            payload_data = base64.b64decode(data['payload']['cipher_text'])
-            decrypted_bytes = decrypt_fn(key, payload_data)
-            payload_data = json.loads(decrypted_bytes.decode('utf-8'))
+    if decrypt_fn == symmetric_decryption:
+        encrypted_payload = data['payload']['cipher_text']
+        iv = data['metadata']['iv']
+        tag = data['metadata']['tag']
+        aad = data['metadata']['packet_type']
+        decrypted_bytes = decrypt_fn(key, encrypted_payload, iv, tag, aad)
+        payload_data = json.loads(decrypted_bytes.decode('utf-8'))
+    elif decrypt_fn == asymmetric_decryption:
+        payload_data = base64.b64decode(data['payload']['cipher_text'])
+        decrypted_bytes = decrypt_fn(key, payload_data)
+        payload_data = json.loads(decrypted_bytes.decode('utf-8'))
     
-        else:
-            print("[ERROR] parse message requires a decryption function")
-            raise ServerError
-    except Exception:
-        raise DecryptionFailed
     payload = Payload(**payload_data)
     return Message(metadata=metadata, payload=payload)
 
@@ -142,16 +136,11 @@ class ServerProtocol(Protocol):
                 message = parse_message(data, decrypt_fn=asymmetric_decryption, key=self.factory.private_key_encryption)
             else:
                 message = parse_message(data,decrypt_fn=symmetric_decryption,key=self.symmetric_key)
-        except DecryptionFailed:
-            self.transport.loseConnection()
-            return
 
-        except ServerError:
-            self.transport.loseConnection()
-            return
         except Exception as e:
             print(f"Exception at cs_auth_handler : {e}")
-            self.send_error("Invalid message format", state=ProtocolState.PRE_AUTH.value)
+            self.send_error("Invalid message format for authentication request")
+            self.transport.lossConnection()
             return
         if PacketType.CS_AUTH.value not in self.state_dict:
             if message.payload.seq != 1:
@@ -212,14 +201,14 @@ class ServerProtocol(Protocol):
                         return
                 except Exception as e:
                     print(f"[ERROR] in case 1 of cs_auth_handler : {e} ")
-                    self.send_error("Something went wrong while authenting",state=ProtocolState.PRE_AUTH.value,nonce=message.payload.nonce)
+                    self.send_error("Something went wrong while authenting",nonce=message.payload.nonce)
                     return
 
             case 3:
                 try:
                     server_challenge_hash=H(self.cs_auth_state['2']['server_challenge'])
                     if(server_challenge_hash != message.payload.server_challenge_solution):
-                        self.send_error("Incorrect response to server challenge", state=ProtocolState.PRE_AUTH.value,nonce=message.payload.nonce)
+                        self.send_error("Incorrect response to server challenge", nonce=message.payload.nonce)
                     
                     client_challenge_solution=H(message.payload.client_challenge)
                     payload={
@@ -265,55 +254,54 @@ class ServerProtocol(Protocol):
                 self.send_error("Unknown sequence step", state=ProtocolState.PRE_AUTH.value,nonce=message.payload.nonce)
                 return
 
-        print(f"Received valid cs_auth packet seq={message.payload.seq}")
     def message_handler(self,data):
         if((PacketType.CS_AUTH.value not in self.state_dict.keys()) or (self.state_dict[PacketType.CS_AUTH.value]!=0)):
             self.send_error("Not Authenticated", state=ProtocolState.POST_AUTH.value)
             return
         try:
             message = parse_message(data, decrypt_fn=symmetric_decryption, key=self.symmetric_key)
-        except DecryptionFailed:
-            self.transport.loseConnection()
-            return
-        except ServerError:
-            self.transport.loseConnection()
-            return
         except Exception as e:
             print(f"Exception at message handler: {e}")
-            self.send_error("Invalid message format", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
+            self.send_error("Invalid message format for message request", nonce=message.payload.nonce)
+            self.transport.loseConnection()
             return
 
         if (message.payload.recipient not in self.factory.userlist.keys()):
             self.send_error("Recipient could not be found", state=ProtocolState.POST_AUTH.value,nonce=message.payload.nonce)
         match message.payload.seq:
             case 1:
-                recipient=message.payload.recipient
-                encryption_public_key = self.factory.userlist[recipient].encryption_public_key
-                signature_verification_public_key=self.factory.userlist[recipient].signing_public_key
-                listen_address=self.factory.userlist[recipient].listen_address
-                payload={
-                    "seq":2,
-                    "recipient":message.payload.recipient,
-                    "nonce": message.payload.nonce,
-                    "encryption_public_key":encryption_public_key,
-                    "signature_verification_public_key":signature_verification_public_key,
-                    "listen_address":listen_address
-                } 
-                payload=json.dumps(payload) 
-                cipher_text=symmetric_encryption(self.symmetric_key,payload,message.metadata.packet_type)
-                response_message=Message(
-                    metadata=Metadata(
-                        packet_type=PacketType.MESSAGE.value,
-                        iv=cipher_text['iv'],
-                        tag=cipher_text['tag'],
-                    ),
-                    payload=Payload(
-                        cipher_text=cipher_text['cipher_text']
-                    )
-                ) 
-                response = message_to_dict(response_message)
-                self.transport.write(json.dumps(response).encode('utf-8'))
-                return
+                try:
+                    recipient=message.payload.recipient
+                    encryption_public_key = self.factory.userlist[recipient].encryption_public_key
+                    signature_verification_public_key=self.factory.userlist[recipient].signing_public_key
+                    listen_address=self.factory.userlist[recipient].listen_address
+                    payload={
+                        "seq":2,
+                        "recipient":message.payload.recipient,
+                        "nonce": message.payload.nonce,
+                        "encryption_public_key":encryption_public_key,
+                        "signature_verification_public_key":signature_verification_public_key,
+                        "listen_address":listen_address
+                    } 
+                    payload=json.dumps(payload) 
+                    cipher_text=symmetric_encryption(self.symmetric_key,payload,message.metadata.packet_type)
+                    response_message=Message(
+                        metadata=Metadata(
+                            packet_type=PacketType.MESSAGE.value,
+                            iv=cipher_text['iv'],
+                            tag=cipher_text['tag'],
+                        ),
+                        payload=Payload(
+                            cipher_text=cipher_text['cipher_text']
+                        )
+                    ) 
+                    response = message_to_dict(response_message)
+                    self.transport.write(json.dumps(response).encode('utf-8'))
+                    return
+                except Exception as e:
+                    print(f"[ERROR] in case 1 of message_handler : {e} ")
+                    self.send_error("Something went wrong with message request",nonce=message.payload.nonce)
+                    return
             case _:
                 self.send_error("Unknown sequence step" ,nonce=message.payload.nonce)
                 return 
