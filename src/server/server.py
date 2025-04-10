@@ -25,6 +25,7 @@ PUBLIC_KEY_ENCRYPTION = f"{ROOT_DIR}/config/encryption_keys/public_key_encryptio
 PRIVATE_KEY_SIGNING= f"{ROOT_DIR}/config/signing_keys/private_key_signing.pem"
 PUBLIC_KEY_SIGNING= f"{ROOT_DIR}/config/signing_keys/public_key_signing.pem" 
 PUBLIC_PARAMS=f"{ROOT_DIR}/public_params.json"
+DB_FILE = f"{ROOT_DIR}/store.db"
 def message_to_dict(message: Message) -> dict:
     return strip_none(asdict(message))
 
@@ -73,7 +74,7 @@ class ServerProtocol(Protocol):
         self.cs_auth_state={}
         self.username=None
     def connectionMade(self):
-        self.db = sqlite3.connect("store.db")
+        self.db = sqlite3.connect(DB_FILE)
         self.cursor = self.db.cursor()
         self.factory.numProtocols += 1
         print(f"[+] New connection. Active: {self.factory.numProtocols}")
@@ -492,7 +493,7 @@ class ServerFactory(Factory):
 
 
 def init_db():
-    con = sqlite3.connect("store.db")
+    con = sqlite3.connect(DB_FILE)
     try:
         cur = con.cursor()
         cur.close

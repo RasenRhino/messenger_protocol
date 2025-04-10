@@ -8,20 +8,14 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 import sys
 from pathlib import Path
-
-ROOT_DIR = str(Path(__file__).parent.parent.resolve())+'/src'
-print(ROOT_DIR)
-if ROOT_DIR not in sys.path:
-    sys.path.append(ROOT_DIR)
 from config.config import load_dh_public_params
 from crypto_utils.core import H
-JSON_FILE = "userdetails.json"
-DB_FILE = "store.db"
+
+ROOT_DIR = str(Path(__file__).parent.resolve())
+JSON_FILE = f"{ROOT_DIR}/userdetails.json"
+DB_FILE = f"{ROOT_DIR}/store.db"
 TABLE_NAME = "users"
 
-# def H(*args):
-#     a = ":".join(str(a) for a in args)
-#     return int(hashlib.sha3_512(a.encode()).hexdigest(), 16)
 def generate_salt(length=16):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
@@ -30,10 +24,7 @@ def generate_key():
 
 def hash_password_with_salt(password, salt):
     return H(salt,password)
-    # digest = hashes.Hash(hashes.SHA3_512(), backend=default_backend())
-    # digest.update((password + salt).encode())
-    # print(f"Hashing: {(password + salt).encode()}")
-    # return digest.finalize().hex()
+
 def generate_verifier(salt,username,password):
     x = H(salt,username,password)
     g,N,_=load_dh_public_params()
