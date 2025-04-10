@@ -4,7 +4,7 @@
             "metadata": {
                 "packet_type": "cc_auth",
                 "dh_contribution": 4444,
-                "signature_dh_contribution": "Sig(DH)"
+                "signature_dh_contribution": "Sig(DH||cc_auth)"
             },
             "payload": {
                 "seq": 1,
@@ -17,7 +17,7 @@
                 "dh_contribution": 4444,
                 "iv": "iv",
                 "tag": "tag",
-                "signature_dh_contribution": "Sig(DH)"
+                "signature_dh_contribution": "Sig(DH||cc_auth)"
             },
             "payload": {
                 "seq": 2,

@@ -16,6 +16,10 @@ def load_server_address():
 def load_dh_public_params():
     with open(f"{CONFIG_DIR}/dh_public_params.json","r") as f:
         data = json.load(f)
+        with client_store_lock:
+            client_store.setdefault("common",{}).setdefault("dh_public_params",{})["g"] = data["public_params"]["g"]
+            client_store.setdefault("common",{}).setdefault("dh_public_params",{})["N"] = data["public_params"]["N"]
+            client_store.setdefault("common",{}).setdefault("dh_public_params",{})["k"] = data["public_params"]["k"]
         return (data["public_params"]["g"], data["public_params"]["N"], data["public_params"]["k"])
 
 def load_server_public_keys():

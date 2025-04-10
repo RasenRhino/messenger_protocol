@@ -5,7 +5,7 @@ import inspect
 from config.config import TCP_RECV_SIZE
 from client.commands.commands import send_list_packet, send_message_packet, send_logout_packet
 
-def command_loop(client_socket: socket.socket):
+def command_loop(cs_socket: socket.socket):
     try:
         while True:
             command = input("+> ").split(" ")
@@ -13,13 +13,13 @@ def command_loop(client_socket: socket.socket):
             
             match operation:
                 case "list":
-                    send_list_packet(client_socket)
+                    send_list_packet(cs_socket)
                 case "send":
                     recipient = command[1]
                     message = " ".join(command[2:])
-                    send_message_packet(client_socket, recipient, message)
+                    send_message_packet(cs_socket, recipient, message)
                 case "logout":
-                    send_logout_packet(client_socket)
+                    send_logout_packet(cs_socket)
                 case _:
                     error = inspect.cleandoc(f"""
                             +> Operation {operation} is not supported
@@ -33,13 +33,13 @@ def command_loop(client_socket: socket.socket):
             #     continue
             # msg = command.encode()
             # try:
-            #     client_socket.sendall(msg)
+            #     cs_socket.sendall(msg)
             # except socket.error as e:
             #     print(f"Error sending command: {e}")
             #     raise ConnectionResetError("Server socket closed")
 
             # try:
-            #     response = client_socket.recv(TCP_RECV_SIZE)
+            #     response = cs_socket.recv(TCP_RECV_SIZE)
             #     if not response:
             #         raise ConnectionResetError("Server closed the connection.")
             #     print(f"Server: {response.decode()}")

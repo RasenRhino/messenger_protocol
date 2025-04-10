@@ -7,8 +7,9 @@ from config.config import load_dh_public_params, load_server_public_keys, client
 from client.helpers import *
 from config.exceptions import *
 
-def login_step_1(client_socket, username, password, a, g, N, k):
+def login_step_1(cs_socket, username, password, g, N, k):
     seq = 1
+    a = generate_dh_private_exponent()
     A = client_srp_dh_public_contribution(g, a, N)
     nonce = generate_nonce()
     server_encryption_public_key, _ = load_server_public_keys()
@@ -31,15 +32,15 @@ def login_step_1(client_socket, username, password, a, g, N, k):
     }
 
     packet = json.dumps(msg).encode()
-    print(packet)
-    client_socket.sendall(packet)
+    # print(packet)
+    cs_socket.sendall(packet)
     # Might not need these, can check from local vars
     with client_store_lock:
         client_store.setdefault("server",{})["cs_auth_seq"] = seq
         client_store.setdefault("server",{})["nonce"] = nonce
-    response = client_socket.recv(TCP_RECV_SIZE)
+    response = cs_socket.recv(TCP_RECV_SIZE)
     response = json.loads(response.decode())
-    print(response)
+    
     packet_type = response.get("metadata").get("packet_type")
     match packet_type:
         case "cs_auth":
@@ -63,7 +64,7 @@ def login_step_1(client_socket, username, password, a, g, N, k):
         case "error":
            handle_pre_auth_error(response, nonce)
 
-def login_step_2(client_socket):
+def login_step_2(cs_socket):
     seq = 3
     nonce = generate_nonce()
     with client_store_lock:
@@ -92,11 +93,11 @@ def login_step_2(client_socket):
     }
 
     packet = json.dumps(msg).encode()
-    print(packet)
-    client_socket.sendall(packet)
-    response = client_socket.recv(TCP_RECV_SIZE)
+    # print(packet)
+    cs_socket.sendall(packet)
+    response = cs_socket.recv(TCP_RECV_SIZE)
     response = json.loads(response.decode())
-    print(response)
+    
     packet_type = response.get("metadata").get("packet_type")
     match packet_type:
         case "cs_auth":
@@ -118,7 +119,7 @@ def login_step_2(client_socket):
         case "error":
             handle_pre_auth_error(response, nonce)
 
-def login_step_3(client_socket, username, listen_address):
+def login_step_3(cs_socket, username):
     seq = 5
     packet_type = "cs_auth"
     encryption_private_key, encryption_public_key, encryption_pem_public_key = generate_ephemeral_keypairs()
@@ -130,6 +131,7 @@ def login_step_3(client_socket, username, listen_address):
         client_store.setdefault("self",{})["signature_private_key"] = signiature_private_key
         client_store.setdefault("self",{})["signature_verification_public_key"] = signature_verification_public_key
         session_key = client_store["server"]["session_key"]
+        listen_address = client_store["self"]["listen_address"]
     
     payload = {
         "seq": seq,
@@ -150,22 +152,21 @@ def login_step_3(client_socket, username, listen_address):
         }
     }
     packet = json.dumps(msg).encode()
-    print(packet)
-    client_socket.sendall(packet)
+    # print(packet)
+    cs_socket.sendall(packet)
 
-def login(client_socket: socket.socket, listening_port: int):
+def login(cs_socket: socket.socket):
     """
     Start auth flow
     """
     username = input("Please Enter you Username: ")
     password = input("Please enter your password: ")
-    listening_ip = client_socket.getsockname()[0] 
-    listen_address = f"{listening_ip}:{str(listening_port)}"
-    a = generate_dh_private_exponent()
+    with client_store_lock:
+        client_store.setdefault("self",{})["username"] = username
     g, N, k = load_dh_public_params()
-    login_step_1(client_socket, username, password, a, g, N, k)
-    login_step_2(client_socket)
-    login_step_3(client_socket, username, listen_address)
+    login_step_1(cs_socket, username, password, g, N, k)
+    login_step_2(cs_socket)
+    login_step_3(cs_socket, username)
     
 
     

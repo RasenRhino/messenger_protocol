@@ -54,7 +54,7 @@ except Exception as e:
 # Ritik : part 2 starts here 
 response=json.loads(response.decode('utf-8'))
 print("response1 :")
-print(response)
+
 time.sleep(1)
 cipher_text=base64.b64decode(response['payload']['cipher_text'])
 iv=base64.b64decode(response['metadata']['iv'])
