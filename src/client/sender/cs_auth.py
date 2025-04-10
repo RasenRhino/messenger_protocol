@@ -34,10 +34,6 @@ def login_step_1(cs_socket, username, password, g, N, k):
     packet = json.dumps(msg).encode()
     # print(packet)
     cs_socket.sendall(packet)
-    # Might not need these, can check from local vars
-    with client_store_lock:
-        client_store.setdefault("server",{})["cs_auth_seq"] = seq
-        client_store.setdefault("server",{})["nonce"] = nonce
     response = cs_socket.recv(TCP_RECV_SIZE)
     response = json.loads(response.decode())
     
