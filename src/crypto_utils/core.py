@@ -162,7 +162,7 @@ def asymmetric_encryption(public_key, message: bytes) -> bytes:
     return ciphertext
 
 def generate_dh_private_exponent(n_bytes=32):
-    return int.from_bytes(os.urandom(n_bytes))
+    return int.from_bytes(os.urandom(n_bytes), byteorder="big")
 
 def H(*args):
     a = ":".join(str(a) for a in args)
