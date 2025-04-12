@@ -7,6 +7,6 @@ docker run --rm -it --name chat-client --network container:chat-server chat-app 
 ```
 
 # To-Do
-[] Add Robust Error Handling
-[] Add Rate Limit on Server Side
-[] Refactor and Optimize Code. Hardcode packet types in switch case. Update aad to take packet_type from recieved data. 
+- [ ] Add Robust Error Handling
+- [ ] Add Rate Limit on Server Side
+- [ ] Refactor and Optimize Code. Hardcode packet types in switch case. Update aad to take packet_type from recieved data. 
