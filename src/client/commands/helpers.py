@@ -127,6 +127,8 @@ def client_login_step_2(cc_socket, recipient):
             sender_challenge_solution = H(sender_challenge)
             if sender_challenge_solution != decrypted_payload["sender_challenge_solution"]:
                 raise ChallengeResponseFailed()
+            with client_store_lock:
+                client_store.setdefault("peers",{}).setdefault(recipient,{})["socket"] = cc_socket
         # Error cases need to be tweaked later
         case "error":
             pass
@@ -135,3 +137,25 @@ def initiate_client_login(recipient):
     cc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_login_step_1(cc_socket, recipient)
     client_login_step_2(cc_socket, recipient)
+
+def send_message_to_recipient(recipient, message):
+    with client_store_lock:
+        session_key = client_store["peers"][recipient]["session_key"]
+        cc_socket = client_store["peers"][recipient]["socket"]
+    payload = {
+        "message": message
+    }
+    packet_type = "incoming_message"
+    result = symmetric_encryption(session_key, json.dumps(payload), aad=packet_type)
+    msg = {
+        "metadata": {
+            "packet_type": packet_type,
+            "iv": result["iv"],
+            "tag": result["tag"]
+        },
+        "payload": {
+            "cipher_text": result["cipher_text"]
+        }
+    }
+    packet = json.dumps(msg).encode()
+    cc_socket.sendall(packet)

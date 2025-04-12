@@ -487,6 +487,49 @@
         "additionalProperties": false
         }   
     },
+    "incoming_message_schema": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "type": "object",
+                    "properties": {
+                        "packet_type": {
+                            "type": "string",
+                            "const": "incoming_message"
+                        },
+                        "iv": {
+                            "type": "string"
+                        },
+                        "tag": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "packet_type",
+                        "iv",
+                        "tag"
+                    ],
+                    "additionalProperties": false
+                },
+                "payload": {
+                    "type": "object",
+                    "properties": {
+                        "message": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "message"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "metadata",
+                "payload"
+            ],
+            "additionalProperties": false
+        },
     "errors_schema": {
         "pre_auth": {
             "type": "object",

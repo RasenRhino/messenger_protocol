@@ -4,7 +4,7 @@ from crypto_utils.core import generate_nonce, symmetric_encryption, symmetric_de
 from config.config import client_store, client_store_lock, TCP_RECV_SIZE
 from client.helpers import validate_packet_field, handle_post_auth_error
 from config.exceptions import *
-from client.commands.helpers import initiate_client_login
+from client.commands.helpers import initiate_client_login, send_message_to_recipient
 
 def send_list_packet(cs_socket):
     seq = 1
@@ -107,6 +107,7 @@ def send_message_packet(cs_socket, recipient, message, verify_identity=False):
             with client_store_lock:
                 client_store.setdefault("peers",{}).setdefault(recipient,{}).setdefault("message_queue",[]).append(message)
             initiate_client_login(recipient)
+            send_message_to_recipient(recipient, message)
             
         # Error cases need to be tweaked later
         case "error":

@@ -2,6 +2,7 @@ import json
 import socket
 import base64
 from client.helpers import validate_packet_field
+from client.listener.recieve_message import handle_incoming_messages
 from config.config import client_store, client_store_lock, TCP_RECV_SIZE
 from config.exceptions import *
 from client.commands.commands import send_message_packet
@@ -126,19 +127,18 @@ def prove_recipient(cc_socket, sender_username):
     print(packet)
     cc_socket.sendall(packet)
 
-def handle_client_login(cc_socket):
-    response = cc_socket.recv(TCP_RECV_SIZE)
-    response = json.loads(response.decode())
+def handle_client_login(cc_socket, packet):
     
-    packet_type = response.get("metadata").get("packet_type")
+    
+    packet_type = packet.get("metadata").get("packet_type")
     match packet_type:
         case "cc_auth":
-            metadata = response.get("metadata")
+            metadata = packet.get("metadata")
             validate_packet_field(metadata, packet_type=packet_type, field="metadata", seq=1)
             
             with client_store_lock:
                 encryption_private_key = client_store["self"]["encryption_private_key"]
-            payload = response.get("payload").get("cipher_text")
+            payload = packet.get("payload").get("cipher_text")
             decrypted_payload = asymmetric_decryption(encryption_private_key, base64.b64decode(payload))
             decrypted_payload = json.loads(decrypted_payload.decode())
             current_seq = decrypted_payload["seq"]
@@ -152,6 +152,7 @@ def handle_client_login(cc_socket):
             send_dh_contribution(cc_socket, sender_username, metadata["dh_contribution"])
             authenticate_sender(cc_socket, sender_username)
             prove_recipient(cc_socket, sender_username)
+            handle_incoming_messages(cc_socket, sender_username)
         # Error cases need to be tweaked later
         case "error":
         #    handle_pre_auth_error(response, nonce)

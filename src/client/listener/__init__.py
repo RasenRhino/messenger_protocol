@@ -1,8 +1,22 @@
 import socket
 import threading
-from config.config import client_store, client_store_lock
+import json
+from config.config import client_store, client_store_lock, TCP_RECV_SIZE
 from crypto_utils.core import generate_random_port
 from client.listener.cc_auth import handle_client_login
+from client.listener.recieve_message import handle_incoming_messages
+
+
+def handle_client(cc_socket: socket.socket):
+    packet = cc_socket.recv(TCP_RECV_SIZE)
+    packet = json.loads(packet.decode())
+    packet_type = packet.get("metadata").get("packet_type")
+
+    match packet_type:
+        case "cc_auth":
+            handle_client_login(cc_socket, packet)
+        # case "incoming_message":
+        #     handle_incoming_message(packet)
 
 def start_listener():
     while True:
@@ -26,7 +40,7 @@ def start_listener():
             cc_socket, client_address = listener_socket.accept()
             print(f"Accepted connection from {client_address}")
             try:
-                client_thread = threading.Thread(target=handle_client_login, args=(cc_socket,), daemon=True)
+                client_thread = threading.Thread(target=handle_client, args=(cc_socket,), daemon=True)
                 client_thread.start()
             except Exception as e:
                 cc_socket.close()
