@@ -20,3 +20,6 @@ class ServerError(Exception):
 
 class LogoutClient(Exception):
     pass
+
+class IdentityVerificationFailed(Exception):
+    pass

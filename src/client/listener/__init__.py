@@ -25,8 +25,11 @@ def start_listener():
         while True:
             cc_socket, client_address = listener_socket.accept()
             print(f"Accepted connection from {client_address}")
-            client_thread = threading.Thread(target=handle_client_login, args=(cc_socket,), daemon=True)
-            client_thread.start()
+            try:
+                client_thread = threading.Thread(target=handle_client_login, args=(cc_socket,), daemon=True)
+                client_thread.start()
+            except Exception as e:
+                cc_socket.close()
     except KeyboardInterrupt:
         print("Server shutting down...")
     finally:

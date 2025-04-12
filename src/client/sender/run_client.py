@@ -30,6 +30,8 @@ def run_client():
             time.sleep(3)
             continue
         try:
+            with client_store_lock:
+                client_store.setdefault("server",{})["socket"] = cs_socket
             login(cs_socket)
             print("[+] Authenticated. You can now enter commands.")
             command_loop(cs_socket)

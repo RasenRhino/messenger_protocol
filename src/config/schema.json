@@ -281,6 +281,106 @@
             "additionalProperties": false
         }
     },
+    "cc_auth_schema": {
+        "1": {
+        "type": "object",
+        "properties": {
+            "metadata": {
+                "type": "object",
+                "properties": {
+                    "packet_type": {
+                        "type": "string",
+                        "const": "cc_auth"
+                    },
+                    "dh_contribution": {
+                        "type": "integer"
+                    },
+                    "signature_dh_contribution": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "packet_type",
+                    "dh_contribution",
+                    "signature_dh_contribution"
+                ],
+                "additionalProperties": false
+            },
+            "payload": {
+                "type": "object",
+                "properties": {
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "sender_username": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "seq",
+                    "sender_username"
+                ],
+                "additionalProperties": false
+            }
+        },
+        "required": [
+            "metadata",
+            "payload"
+        ],
+        "additionalProperties": false
+        },
+        "4": {
+        "type": "object",
+        "properties": {
+            "metadata": {
+                "type": "object",
+                "properties": {
+                    "packet_type": {
+                        "type": "string",
+                        "const": "cc_auth"
+                    },
+                    "iv": {
+                        "type": "string"
+                    },
+                    "tag": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "packet_type",
+                    "iv",
+                    "tag"
+                ],
+                "additionalProperties": false
+            },
+            "payload": {
+                "type": "object",
+                "properties": {
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "nonce": {
+                        "type": "string"
+                    },
+                    "client_challenge_solution": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "seq",
+                    "nonce",
+                    "client_challenge_solution"
+                ],
+                "additionalProperties": false
+            }
+        },
+        "required": [
+            "metadata",
+            "payload"
+        ],
+        "additionalProperties": false
+        }     
+    },
     "errors_schema": {
         "pre_auth": {
             "type": "object",

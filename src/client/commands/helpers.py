@@ -2,14 +2,14 @@ import base64
 import json
 import socket
 from config.config import load_dh_public_params, client_store, client_store_lock, TCP_RECV_SIZE
-from crypto_utils.core import asymmetric_encryption, generate_dh_private_exponent, generate_challenge, generate_signature
+from crypto_utils.core import *
 
 def client_login_step_1(recipient):
     with client_store_lock:
         g = client_store["common"]["dh_public_params"]["g"]
         N = client_store["common"]["dh_public_params"]["N"]
         signature_private_key = client_store["self"]["signature_private_key"]
-        encryption_public_key = client_store["self"]["encryption_public_key"]
+        recipient_epk = load_public_key_from_bytes(client_store["peers"][recipient]["encryption_public_key"])
         username = client_store["self"]["username"]
         listen_address = (
             client_store["peers"][recipient]["listen_address"].split(":")[0],
@@ -26,7 +26,7 @@ def client_login_step_1(recipient):
         "sender_username": username
     }
 
-    encrypted_payload = asymmetric_encryption(encryption_public_key, json.dumps(payload).encode())
+    encrypted_payload = asymmetric_encryption(recipient_epk, json.dumps(payload).encode())
     encoded_payload = base64.b64encode(encrypted_payload).decode()
     msg = {
         "metadata": {

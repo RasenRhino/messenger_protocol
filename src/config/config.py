@@ -44,4 +44,6 @@ def load_packet_schema(schema_type, field, seq=None):
             return schemas["message_schema"][str(seq)]["properties"][field]
         case "logout":
             return schemas["logout_schema"][str(seq)]["properties"][field]
+        case "cc_auth":
+            return schemas["cc_auth_schema"][str(seq)]["properties"][field]
         
