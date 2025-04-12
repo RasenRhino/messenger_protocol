@@ -9,7 +9,6 @@ def validate_packet_field(data, packet_type, field, seq=None, state=None):
     match packet_type:
         case "error":
             schema = load_packet_schema(schema_type="error_pre_auth", field=field)
-            print(schema)
             # jsonschema.validate(instance=data, schema=schema)
             # raise ServerPreAuthError("Server sent an error during authentication")
             match state:

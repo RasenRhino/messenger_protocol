@@ -33,6 +33,8 @@ def send_list_packet(cs_socket):
     # print(packet)
     cs_socket.sendall(packet)
     response = cs_socket.recv(TCP_RECV_SIZE)
+    if not response:
+        raise StopClient("Server closed the connection")
     response = json.loads(response.decode())
     packet_type = response.get("metadata").get("packet_type")
     match packet_type:
@@ -81,6 +83,8 @@ def send_message_packet(cs_socket, recipient, message, verify_identity=False):
     # print(packet)
     cs_socket.sendall(packet)
     response = cs_socket.recv(TCP_RECV_SIZE)
+    if not response:
+        raise StopClient("Server closed the connection")
     response = json.loads(response.decode())
     
     packet_type = response.get("metadata").get("packet_type")
@@ -140,6 +144,8 @@ def send_logout_packet(cs_socket):
     # print(packet)
     cs_socket.sendall(packet)
     response = cs_socket.recv(TCP_RECV_SIZE)
+    if not response:
+        raise StopClient("Server closed the connection")
     response = json.loads(response.decode())
     
     packet_type = response.get("metadata").get("packet_type")

@@ -36,8 +36,7 @@ def login_step_1(cs_socket, username, password, g, N, k):
     cs_socket.sendall(packet)
     response = cs_socket.recv(TCP_RECV_SIZE)
     if not response:
-        print("Server has disconnected the session")
-        raise LogoutClient()
+        raise StopClient("Server has disconnected the session")
     response = json.loads(response.decode())
     
     packet_type = response.get("metadata").get("packet_type")
@@ -87,16 +86,16 @@ def login_step_2(cs_socket):
             "tag": result["tag"]
         },
         "payload": {
-            "cipher_text": result["cipher_text"]
+            "cipher_text": result["cipher_text"][:-2]
         }
     }
 
     packet = json.dumps(msg).encode()
-    # print(packet)
     cs_socket.sendall(packet)
     response = cs_socket.recv(TCP_RECV_SIZE)
+    if not response:
+        raise StopClient("Server has disconnected the session")
     response = json.loads(response.decode())
-    
     packet_type = response.get("metadata").get("packet_type")
     match packet_type:
         case "cs_auth":

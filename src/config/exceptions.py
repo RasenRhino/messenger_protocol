@@ -23,3 +23,6 @@ class LogoutClient(Exception):
 
 class IdentityVerificationFailed(Exception):
     pass
+
+class StopClient(Exception):
+    pass

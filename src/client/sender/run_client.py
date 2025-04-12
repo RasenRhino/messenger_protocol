@@ -4,29 +4,31 @@ from config.config import load_server_address, client_store, client_store_lock, 
 from client.sender.cs_auth import login
 from crypto_utils.core import generate_random_port
 from client.commands import command_loop
-from config.exceptions import LogoutClient
+from config.exceptions import LogoutClient, StopClient
 
 def connect_to_server():
-    cs_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_address = load_server_address()
-    cs_socket.connect(server_address)
-    print("Connecting to server")
-    return cs_socket
+    try:
+        cs_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_address = load_server_address()
+        print(f"[+] Connecting to server at {server_address}")
+        cs_socket.connect(server_address)
+        return cs_socket
+    except socket.error as e:
+        print(f"[!] Failed to connect: {e}")
+        return None
 
 def run_client():
     """
     Runs in the main thread and responsible for handling user input
     and sending packets to the server and other clients.
     """
-    # start_time = time.time()
     while True:
         with client_store_lock:
-            if not client_store or not client_store.get("self").get("listen_address"):
+            if not client_store.get("self",{}).get("listen_address"):
                 continue
-        # print(f"Elapsed: {time.time() - start_time}")
         cs_socket = connect_to_server()
         if cs_socket is None:
-            print("Retrying in 3 seconds...")
+            print("[+] Retrying in 3 seconds...")
             time.sleep(3)
             continue
         try:
@@ -37,19 +39,22 @@ def run_client():
             command_loop(cs_socket)
         except (ConnectionResetError, BrokenPipeError, socket.error) as e:
             print(f"[!] Disconnected or error occurred: {e}")
-            print("Attempting to reconnect in 3 seconds...")
+            print(f"[+] Attempting to reconnect in 3 seconds...")
         except KeyboardInterrupt:
-            print("Client interrupted by user.")
+            print(f"[!] Quitting Gracefully.")
             break
         except LogoutClient:
-            print(f"Logging Out!")
+            print(f"[+] Logging Out!")
             break
+        except StopClient as e:
+            print(f"[+] Server Error: {e}")
+            print(f"[+] Attempting to reconnect in 3 seconds...")
         except Exception as e:
-            print(f"Exception OCCURED: {e.__str__}")
+            print(f"[!] Unknown Exception: {e}")
         finally:
-            print(f"Closing Socket")
+            print(f"[+] Closing Socket")
             cs_socket.close()
-            time.sleep(2)
+            time.sleep(0.1)
 
 
 
