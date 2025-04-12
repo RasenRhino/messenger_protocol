@@ -74,6 +74,10 @@ class ServerProtocol(Protocol):
         self.cs_auth_state={}
         self.username=None
     def connectionMade(self):
+        self._peer_ip = self.transport.getPeer().host
+        print(f"Blacklisted IPs: {self.factory.blacklisted_ips}")
+        if self._peer_ip in self.factory.blacklisted_ips:
+            self.transport.loseConnection()
         self.db = sqlite3.connect(DB_FILE)
         self.cursor = self.db.cursor()
         self.factory.numProtocols += 1
@@ -210,6 +214,10 @@ class ServerProtocol(Protocol):
                         return
                     else:
                         self.send_error("Username not found", state=ProtocolState.PRE_AUTH.value,nonce=message.payload.nonce)
+                        # Block Username Enumeration Attempts
+                        self.factory.rate_limit_counter[self._peer_ip] = self.factory.rate_limit_counter.get(self._peer_ip,0) + 1
+                        if self.factory.rate_limit_counter[self._peer_ip] > 2:
+                            self.factory.blacklisted_ips.add(self._peer_ip)
                         return
                 except Exception as e:
                     print(f"[ERROR] in case 1 of cs_auth_handler : {e} ")
@@ -230,7 +238,6 @@ class ServerProtocol(Protocol):
                                 "client_challenge_solution":client_challenge_solution
                             }
                     payload=json.dumps(payload)
-                    print(payload)
                     cipher_text=symmetric_encryption(self.symmetric_key,payload,message.metadata.packet_type)
                     response_message = Message(
                         metadata=Metadata(
@@ -442,6 +449,9 @@ class ServerFactory(Factory):
     def __init__(self):
         self.numProtocols = 0
         self.userlist={}
+        self.blacklisted_ips = set()
+        # self.blacklisted_ips.add("127.0.0.1") For Testing
+        self.rate_limit_counter = {}
         # Add dummy user "Bob" with random keys and address
         random_enc_key = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
         random_sign_key = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))

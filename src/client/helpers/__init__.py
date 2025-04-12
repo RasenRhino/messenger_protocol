@@ -42,8 +42,7 @@ def handle_pre_auth_error(response, nonce):
     validate_packet_field(payload, packet_type="error", field="payload", state="pre_auth")
     signature = payload.get("signature")
     if verify_signature(f"{payload['message']}{nonce}", signature, server_signature_verification_public_key):
-        print("Error packet Signature Verified")
-        print(payload["message"])
+        display_error(payload["message"])
     else:
         print("Signature is not valid")
     raise LogoutClient() # Change this later handle errors better.
@@ -57,7 +56,12 @@ def handle_post_auth_error(response, nonce):
     decrypted_payload = symmetric_decryption(key=session_key, payload=payload, iv=metadata["iv"], tag=metadata["tag"], aad=metadata["packet_type"])
     decrypted_payload = json.loads(decrypted_payload.decode())
     validate_packet_field(decrypted_payload, packet_type="error", field="payload", state="post_auth")
-    print(decrypted_payload["message"])
+    if nonce != decrypted_payload["nonce"]:
+        raise InvalidNonce()
+    display_error(decrypted_payload["message"])
+
+def display_error(error):
+    print(f"<- [ERROR]: {error}")
 
 def display_message(message):
     print(f"<- {message}")
