@@ -67,8 +67,64 @@ def send_dh_contribution(cc_socket: socket.socket, sender_username, A):
     print(packet)
     cc_socket.sendall(packet)
 
-def authenticate_sender():
-    pass
+def authenticate_sender(cc_socket, sender_username):
+    response = cc_socket.recv(TCP_RECV_SIZE)
+    response = json.loads(response.decode())
+
+    packet_type = response.get("metadata").get("packet_type")
+    match packet_type:
+        case "cc_auth":
+            metadata = response.get("metadata")
+            validate_packet_field(metadata, packet_type=packet_type, field="metadata", seq=3)
+            
+            with client_store_lock:
+                session_key = client_store["peers"][sender_username]["session_key"]
+                recipient_challenge = client_store["peers"][sender_username]["recipient_challenge"]
+            payload = response.get("payload").get("cipher_text")
+            decrypted_payload = symmetric_decryption(key=session_key, payload=payload, iv=metadata["iv"], tag=metadata["tag"], aad=packet_type)
+            decrypted_payload = json.loads(decrypted_payload.decode())
+            current_seq = decrypted_payload["seq"]
+            if current_seq != 3:
+                raise InvalidSeqNumber()
+            validate_packet_field(decrypted_payload, packet_type="cc_auth", field="payload", seq=3)
+            recipient_challenge_solution = H(recipient_challenge)
+            if recipient_challenge_solution != decrypted_payload["recipient_challenge_solution"]:
+                raise ChallengeResponseFailed()
+            with client_store_lock:
+                client_store.setdefault("peers",{}).setdefault(sender_username,{})["sender_challenge"] = decrypted_payload["sender_challenge"]
+           
+        # Error cases need to be tweaked later
+        case "error":
+        #    handle_pre_auth_error(response, nonce)
+            pass
+
+def prove_recipient(cc_socket, sender_username):
+    with client_store_lock:
+        session_key = client_store["peers"][sender_username]["session_key"]
+        sender_challenge = client_store["peers"][sender_username]["sender_challenge"]
+    seq = 4
+    packet_type = "cc_auth"
+    sender_challenge_solution = H(sender_challenge)
+    payload = {
+        "seq": seq,
+        "sender_challenge_solution": sender_challenge_solution
+    }
+
+    result = symmetric_encryption(session_key, json.dumps(payload), aad=packet_type)
+    msg = {
+        "metadata": {
+            "packet_type": packet_type,
+            "iv": result["iv"],
+            "tag": result["tag"]
+        },
+        "payload": {
+            "cipher_text": result["cipher_text"]
+        }
+    }
+
+    packet = json.dumps(msg).encode()
+    print(packet)
+    cc_socket.sendall(packet)
 
 def handle_client_login(cc_socket):
     response = cc_socket.recv(TCP_RECV_SIZE)
@@ -94,8 +150,8 @@ def handle_client_login(cc_socket):
                 raise IdentityVerificationFailed()
             
             send_dh_contribution(cc_socket, sender_username, metadata["dh_contribution"])
-            authenticate_sender()
-           
+            authenticate_sender(cc_socket, sender_username)
+            prove_recipient(cc_socket, sender_username)
         # Error cases need to be tweaked later
         case "error":
         #    handle_pre_auth_error(response, nonce)

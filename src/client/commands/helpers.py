@@ -6,7 +6,7 @@ from config.exceptions import *
 from config.config import load_dh_public_params, client_store, client_store_lock, TCP_RECV_SIZE
 from crypto_utils.core import *
 
-def client_login_step_1(recipient):
+def client_login_step_1(cc_socket, recipient):
     with client_store_lock:
         g = client_store["common"]["dh_public_params"]["g"]
         N = client_store["common"]["dh_public_params"]["N"]
@@ -44,7 +44,7 @@ def client_login_step_1(recipient):
 
     packet = json.dumps(msg).encode()
     print(packet)
-    cc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    
     cc_socket.connect(listen_address)
     cc_socket.sendall(packet)
     
@@ -79,10 +79,59 @@ def client_login_step_1(recipient):
             pass
     
 
-def client_login_step_2(recipient):
-    pass
+def client_login_step_2(cc_socket, recipient):
+    with client_store_lock:
+        username = client_store["self"]["username"]
+        recipient_challenge = client_store["peers"][recipient]["recipient_challenge"]
+        session_key = client_store["peers"][recipient]["session_key"]
+    seq = 3
+    packet_type = "cc_auth"
+    recipient_challenge_solution = H(recipient_challenge)
+    sender_challenge = generate_challenge()
+    payload = {
+        "seq": seq,
+        "recipient_challenge_solution": recipient_challenge_solution,
+        "sender_challenge": sender_challenge
+    } 
+
+    result = symmetric_encryption(session_key, json.dumps(payload), aad=packet_type)
+    msg = {
+        "metadata": {
+            "packet_type": packet_type,
+            "iv": result["iv"],
+            "tag": result["tag"]
+        },
+        "payload": {
+            "cipher_text": result["cipher_text"]
+        }
+    }
+
+    packet = json.dumps(msg).encode()
+    print(packet)
+    cc_socket.sendall(packet)
+    response = cc_socket.recv(TCP_RECV_SIZE)
+    response = json.loads(response.decode())
+    
+    packet_type = response.get("metadata").get("packet_type")
+    match packet_type:
+        case "cc_auth":
+            metadata = response.get("metadata")
+            validate_packet_field(metadata, packet_type=packet_type, field="metadata", seq=4)
+            payload = response.get("payload").get("cipher_text")
+            decrypted_payload = symmetric_decryption(key=session_key, payload=payload, iv=metadata["iv"], tag=metadata["tag"], aad=packet_type)
+            decrypted_payload = json.loads(decrypted_payload.decode())
+            current_seq = decrypted_payload["seq"]
+            if current_seq != 4:
+                raise InvalidSeqNumber()
+            validate_packet_field(decrypted_payload, packet_type=packet_type, field="payload", seq=current_seq)
+            sender_challenge_solution = H(sender_challenge)
+            if sender_challenge_solution != decrypted_payload["sender_challenge_solution"]:
+                raise ChallengeResponseFailed()
+        # Error cases need to be tweaked later
+        case "error":
+            pass
 
 def initiate_client_login(recipient):
-    
-    client_login_step_1(recipient)
-    client_login_step_2(recipient)
+    cc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    client_login_step_1(cc_socket, recipient)
+    client_login_step_2(cc_socket, recipient)
