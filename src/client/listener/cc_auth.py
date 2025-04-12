@@ -22,20 +22,25 @@ def verify_identity(metadata, payload):
         sender_svpk
     )
 
-def send_dh_contribution(cc_socket: socket.socket, sender_username):
-    seq = 1
+def send_dh_contribution(cc_socket: socket.socket, sender_username, A):
+    seq = 2
     packet_type = "cc_auth"
     recipient_challenge = generate_challenge()
+    
     with client_store_lock:
         g = client_store["common"]["dh_public_params"]["g"]
         N = client_store["common"]["dh_public_params"]["N"]
         signature_private_key = client_store["self"]["signature_private_key"]
-        sender_epk = load_public_key_from_bytes(client_store["peers"][sender_username]["encryption_public_key"])
+        # sender_epk = load_public_key_from_bytes(client_store["peers"][sender_username]["encryption_public_key"])
         username = client_store["self"]["username"]
         client_store.setdefault("peers",{}).setdefault(sender_username,{})["recipient_challenge"] = recipient_challenge
         
     b = generate_dh_private_exponent()
     B = pow(g, b, N)
+    session_key = compute_dh_key(A, b, N)
+    with client_store_lock:
+        client_store.setdefault("peers",{}).setdefault(sender_username,{})["session_key"] = session_key
+
     signature_dh_contribution = generate_signature(f"{str(B)}{packet_type}",signature_private_key)
 
     payload = {
@@ -44,16 +49,17 @@ def send_dh_contribution(cc_socket: socket.socket, sender_username):
         "recipient_challenge": recipient_challenge
     }
 
-    encrypted_payload = asymmetric_encryption(sender_epk, json.dumps(payload).encode())
-    encoded_payload = base64.b64encode(encrypted_payload).decode()
+    result = symmetric_encryption(session_key, json.dumps(payload), aad=packet_type)
     msg = {
         "metadata": {
             "packet_type": packet_type,
             "dh_contribution": B,
-            "signature_dh_contribution": signature_dh_contribution
+            "signature_dh_contribution": signature_dh_contribution,
+            "iv": result["iv"],
+            "tag": result["tag"]
         },
         "payload": {
-            "cipher_text": encoded_payload
+            "cipher_text": result["cipher_text"]
         }
     }
 
@@ -86,8 +92,8 @@ def handle_client_login(cc_socket):
             sender_username = decrypted_payload["sender_username"]
             if not verify_identity(metadata, decrypted_payload):
                 raise IdentityVerificationFailed()
-
-            send_dh_contribution(cc_socket, sender_username)
+            
+            send_dh_contribution(cc_socket, sender_username, metadata["dh_contribution"])
             authenticate_sender()
            
         # Error cases need to be tweaked later

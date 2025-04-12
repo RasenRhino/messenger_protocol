@@ -171,6 +171,9 @@ def H(*args):
     a = ":".join(str(a) for a in args)
     return int(hashlib.sha3_512(a.encode()).hexdigest(), 16)
 
+def compute_dh_key(C, e, N):
+    return hashlib.sha3_512(str(pow(C, e, N)).encode()).digest()[:32]
+
 def client_srp_dh_public_contribution(g, a, N):
     return pow(g, a, N)
 

@@ -329,7 +329,7 @@
         ],
         "additionalProperties": false
         },
-        "4": {
+        "2": {
         "type": "object",
         "properties": {
             "metadata": {
@@ -344,12 +344,20 @@
                     },
                     "tag": {
                         "type": "string"
+                    },
+                    "dh_contribution": {
+                        "type": "integer"
+                    },
+                    "signature_dh_contribution": {
+                        "type": "string"
                     }
                 },
                 "required": [
                     "packet_type",
                     "iv",
-                    "tag"
+                    "tag",
+                    "dh_contribution",
+                    "signature_dh_contribution"
                 ],
                 "additionalProperties": false
             },
@@ -359,17 +367,17 @@
                     "seq": {
                         "type": "integer"
                     },
-                    "nonce": {
+                    "recipient_username": {
                         "type": "string"
                     },
-                    "client_challenge_solution": {
-                        "type": "integer"
+                    "recipient_challenge": {
+                        "type": "string"
                     }
                 },
                 "required": [
                     "seq",
-                    "nonce",
-                    "client_challenge_solution"
+                    "recipient_username",
+                    "recipient_challenge"
                 ],
                 "additionalProperties": false
             }

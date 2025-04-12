@@ -1,6 +1,8 @@
 import base64
 import json
 import socket
+from client.helpers import validate_packet_field
+from config.exceptions import *
 from config.config import load_dh_public_params, client_store, client_store_lock, TCP_RECV_SIZE
 from crypto_utils.core import *
 
@@ -10,6 +12,7 @@ def client_login_step_1(recipient):
         N = client_store["common"]["dh_public_params"]["N"]
         signature_private_key = client_store["self"]["signature_private_key"]
         recipient_epk = load_public_key_from_bytes(client_store["peers"][recipient]["encryption_public_key"])
+        recipient_svpk = load_public_key_from_bytes(client_store["peers"][recipient]["signature_verification_public_key"])
         username = client_store["self"]["username"]
         listen_address = (
             client_store["peers"][recipient]["listen_address"].split(":")[0],
@@ -44,35 +47,36 @@ def client_login_step_1(recipient):
     cc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     cc_socket.connect(listen_address)
     cc_socket.sendall(packet)
-    # Might not need these, can check from local vars
-    # with client_store_lock:
-    #     client_store.setdefault("server",{})["cs_auth_seq"] = seq
-    #     client_store.setdefault("server",{})["nonce"] = nonce
-    # response = cc_socket.recv(TCP_RECV_SIZE)
-    # response = json.loads(response.decode())
-    # 
-    # packet_type = response.get("metadata").get("packet_type")
-    # match packet_type:
-    #     case "cs_auth":
-    #         metadata = response.get("metadata")
-    #         validate_packet_field(metadata, packet_type=packet_type, field="metadata", seq=2)
-    #         session_key = client_compute_srp_session_key(metadata["salt"], username, password, a, A, metadata["dh_contribution"], g, N, k)
-    #         with client_store_lock:
-    #             client_store.setdefault("server",{})["session_key"] = session_key
-    #         payload = response.get("payload").get("cipher_text")
-    #         decrypted_payload = symmetric_decryption(key=session_key, payload=payload, iv=metadata["iv"], tag=metadata["tag"], aad=packet_type)
-    #         decrypted_payload = json.loads(decrypted_payload.decode())
-    #         current_seq = decrypted_payload["seq"]
-    #         if current_seq != 2:
-    #             raise InvalidSeqNumber()
-    #         validate_packet_field(decrypted_payload, packet_type="cs_auth", field="payload", seq=current_seq)
-    #         if nonce != decrypted_payload["nonce"]:
-    #             raise InvalidNonce()
-    #         with client_store_lock:
-    #             client_store.setdefault("server",{})["server_challenge"] = decrypted_payload["server_challenge"]
-    #     # Error cases need to be tweaked later
-    #     case "error":
-    #        handle_pre_auth_error(response, nonce)
+    
+    response = cc_socket.recv(TCP_RECV_SIZE)
+    response = json.loads(response.decode())
+    
+    packet_type = response.get("metadata").get("packet_type")
+    match packet_type:
+        case "cc_auth":
+            metadata = response.get("metadata")
+            validate_packet_field(metadata, packet_type=packet_type, field="metadata", seq=2)
+            if not verify_signature(
+                f"{metadata['dh_contribution']}{metadata['packet_type']}",
+                metadata["signature_dh_contribution"],
+                recipient_svpk
+            ):
+                raise InvalidSignature()
+            session_key = compute_dh_key(metadata["dh_contribution"], a, N)
+            with client_store_lock:
+                client_store.setdefault("peers",{}).setdefault(recipient,{})["session_key"] = session_key
+            payload = response.get("payload").get("cipher_text")
+            decrypted_payload = symmetric_decryption(key=session_key, payload=payload, iv=metadata["iv"], tag=metadata["tag"], aad=packet_type)
+            decrypted_payload = json.loads(decrypted_payload.decode())
+            current_seq = decrypted_payload["seq"]
+            if current_seq != 2:
+                raise InvalidSeqNumber()
+            validate_packet_field(decrypted_payload, packet_type=packet_type, field="payload", seq=current_seq)
+            with client_store_lock:
+                client_store.setdefault("peers",{}).setdefault(recipient,{})["recipient_challenge"] = decrypted_payload["recipient_challenge"]
+        # Error cases need to be tweaked later
+        case "error":
+            pass
     
 
 def client_login_step_2(recipient):

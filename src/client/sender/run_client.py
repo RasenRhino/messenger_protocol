@@ -45,7 +45,7 @@ def run_client():
             print(f"Logging Out!")
             break
         except Exception as e:
-            print(f"Exception OCCURED: {e}")
+            print(f"Exception OCCURED: {e.__str__}")
         finally:
             print(f"Closing Socket")
             cs_socket.close()
