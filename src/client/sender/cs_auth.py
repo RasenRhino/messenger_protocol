@@ -35,6 +35,9 @@ def login_step_1(cs_socket, username, password, g, N, k):
     # print(packet)
     cs_socket.sendall(packet)
     response = cs_socket.recv(TCP_RECV_SIZE)
+    if not response:
+        print("Server has disconnected the session")
+        raise LogoutClient()
     response = json.loads(response.decode())
     
     packet_type = response.get("metadata").get("packet_type")
