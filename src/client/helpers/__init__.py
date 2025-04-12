@@ -27,6 +27,10 @@ def validate_packet_field(data, packet_type, field, seq=None, state=None):
             schema = load_packet_schema(schema_type="message", field=field, seq=seq)
         case "logout":
             schema = load_packet_schema(schema_type="logout", field=field, seq=seq)
+        case "cc_auth":
+            schema = load_packet_schema(schema_type="cc_auth", field=field, seq=seq)
+        case "incoming_message":
+            schema = load_packet_schema(schema_type="incoming_message", field=field)
     jsonschema.validate(instance=data, schema=schema)
 
 def handle_pre_auth_error(response, nonce):

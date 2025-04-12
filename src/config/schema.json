@@ -281,6 +281,255 @@
             "additionalProperties": false
         }
     },
+    "cc_auth_schema": {
+        "1": {
+        "type": "object",
+        "properties": {
+            "metadata": {
+                "type": "object",
+                "properties": {
+                    "packet_type": {
+                        "type": "string",
+                        "const": "cc_auth"
+                    },
+                    "dh_contribution": {
+                        "type": "integer"
+                    },
+                    "signature_dh_contribution": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "packet_type",
+                    "dh_contribution",
+                    "signature_dh_contribution"
+                ],
+                "additionalProperties": false
+            },
+            "payload": {
+                "type": "object",
+                "properties": {
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "sender_username": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "seq",
+                    "sender_username"
+                ],
+                "additionalProperties": false
+            }
+        },
+        "required": [
+            "metadata",
+            "payload"
+        ],
+        "additionalProperties": false
+        },
+        "2": {
+        "type": "object",
+        "properties": {
+            "metadata": {
+                "type": "object",
+                "properties": {
+                    "packet_type": {
+                        "type": "string",
+                        "const": "cc_auth"
+                    },
+                    "iv": {
+                        "type": "string"
+                    },
+                    "tag": {
+                        "type": "string"
+                    },
+                    "dh_contribution": {
+                        "type": "integer"
+                    },
+                    "signature_dh_contribution": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "packet_type",
+                    "iv",
+                    "tag",
+                    "dh_contribution",
+                    "signature_dh_contribution"
+                ],
+                "additionalProperties": false
+            },
+            "payload": {
+                "type": "object",
+                "properties": {
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "recipient_username": {
+                        "type": "string"
+                    },
+                    "recipient_challenge": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "seq",
+                    "recipient_username",
+                    "recipient_challenge"
+                ],
+                "additionalProperties": false
+            }
+        },
+        "required": [
+            "metadata",
+            "payload"
+        ],
+        "additionalProperties": false
+        },
+        "3": {
+        "type": "object",
+        "properties": {
+            "metadata": {
+                "type": "object",
+                "properties": {
+                    "packet_type": {
+                        "type": "string",
+                        "const": "cc_auth"
+                    },
+                    "iv": {
+                        "type": "string"
+                    },
+                    "tag": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                        "packet_type",
+                        "iv",
+                        "tag"
+                    ],
+                "additionalProperties": false
+            },
+            "payload": {
+                "type": "object",
+                "properties": {
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "recipient_challenge_solution": {
+                        "type": "integer"
+                    },
+                    "sender_challenge": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "seq",
+                    "recipient_challenge_solution",
+                    "sender_challenge"
+                ],
+                "additionalProperties": false
+            }
+        },
+        "required": [
+            "metadata",
+            "payload"
+        ],
+        "additionalProperties": false
+        },
+        "4": {
+        "type": "object",
+        "properties": {
+            "metadata": {
+                "type": "object",
+                "properties": {
+                    "packet_type": {
+                        "type": "string",
+                        "const": "cc_auth"
+                    },
+                    "iv": {
+                        "type": "string"
+                    },
+                    "tag": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                        "packet_type",
+                        "iv",
+                        "tag"
+                    ],
+                "additionalProperties": false
+            },
+            "payload": {
+                "type": "object",
+                "properties": {
+                    "seq": {
+                        "type": "integer"
+                    },
+                    "sender_challenge_solution": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "seq",
+                    "sender_challenge_solution"
+                ],
+                "additionalProperties": false
+            }
+        },
+        "required": [
+            "metadata",
+            "payload"
+        ],
+        "additionalProperties": false
+        }   
+    },
+    "incoming_message_schema": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "type": "object",
+                    "properties": {
+                        "packet_type": {
+                            "type": "string",
+                            "const": "incoming_message"
+                        },
+                        "iv": {
+                            "type": "string"
+                        },
+                        "tag": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "packet_type",
+                        "iv",
+                        "tag"
+                    ],
+                    "additionalProperties": false
+                },
+                "payload": {
+                    "type": "object",
+                    "properties": {
+                        "message": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "message"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "metadata",
+                "payload"
+            ],
+            "additionalProperties": false
+        },
     "errors_schema": {
         "pre_auth": {
             "type": "object",

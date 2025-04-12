@@ -20,7 +20,10 @@ def load_private_key(file_path: str):
         key_data = f.read()
         return serialization.load_pem_private_key(key_data, password=None )
 
-
+def load_public_key_from_bytes(public_key: str):
+    return serialization.load_pem_public_key(
+        base64.b64decode(public_key),
+    )
 
 
 def load_public_key(file_path: str):
@@ -35,7 +38,7 @@ def load_public_key(file_path: str):
 
 
 
-def asymmetric_decryption(private_key, ciphertext: bytes) -> bytes:
+def asymmetric_decryption(private_key: bytes, ciphertext: bytes) -> bytes:
     """
     Decrypt an RSA OAEP ciphertext using the given private key.
 
@@ -143,7 +146,7 @@ def symmetric_encryption(key: bytes, payload: str, aad: str) -> dict:
         "AAD": base64.b64encode(associated_data).decode('utf-8')
     }
 
-def asymmetric_encryption(public_key, message: bytes) -> bytes:
+def asymmetric_encryption(public_key: bytes, message: bytes) -> bytes:
     """
     Encrypt a message using RSA OAEP with SHA-256.
 
@@ -167,6 +170,9 @@ def generate_dh_private_exponent(n_bytes=32):
 def H(*args):
     a = ":".join(str(a) for a in args)
     return int(hashlib.sha3_512(a.encode()).hexdigest(), 16)
+
+def compute_dh_key(C, e, N):
+    return hashlib.sha3_512(str(pow(C, e, N)).encode()).digest()[:32]
 
 def client_srp_dh_public_contribution(g, a, N):
     return pow(g, a, N)

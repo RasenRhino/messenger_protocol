@@ -1,8 +1,12 @@
 {
     "messages": {
         "1": {
-            "payload": {
+            "metadata": {
                 "packet_type": "incoming_message",
+                "iv": "iv",
+                "tag": "tag"
+            },
+            "payload": {
                 "message": "Yo whats up"
             }
         }
