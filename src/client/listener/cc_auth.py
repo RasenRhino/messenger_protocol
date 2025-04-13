@@ -13,8 +13,9 @@ def verify_identity(metadata, payload):
     with client_store_lock:
         cs_socket = client_store.setdefault("server",{})["socket"] 
     send_message_packet(cs_socket, sender_username, message=None, verify_identity=True)
-    # Handle when username doesn't exist
     with client_store_lock:
+        if not client_store.get("peers",{}).get(sender_username,{}).get("signature_verification_public_key"):
+            raise IdentityVerificationFailed(f"Failed to Verify Identity of Sender. {sender_username} is not signed-in")
         sender_svpk = load_public_key_from_bytes(client_store["peers"][sender_username]["signature_verification_public_key"])
     
     return verify_signature(
@@ -87,7 +88,7 @@ def authenticate_sender(cc_socket, sender_username):
     validate_packet_field(decrypted_payload, packet_type="cc_auth", field="payload", seq=3)
     recipient_challenge_solution = H(recipient_challenge)
     if recipient_challenge_solution != decrypted_payload["recipient_challenge_solution"]:
-        raise ChallengeResponseFailed()
+        raise ChallengeResponseFailed(f"{sender_username} Failed to solve the Challenge")
     with client_store_lock:
         client_store.setdefault("peers",{}).setdefault(sender_username,{})["sender_challenge"] = decrypted_payload["sender_challenge"]
 

@@ -51,8 +51,6 @@ def start_listener():
                 client_thread.start()
                 print(f"Thread for Client-{i} started")
                 i += 1
-            except InvalidPacketType as e:
-                print(f"[!] Exception: {type(e).__name__}: {e}")
             except Exception as e:
                 print(f"[!] Exception: {type(e).__name__}: {e}")
     except KeyboardInterrupt:
