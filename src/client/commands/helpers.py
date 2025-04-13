@@ -61,7 +61,7 @@ def client_login_step_1(cc_socket, recipient):
                 raise InvalidSignature()
             session_key = compute_dh_key(metadata["dh_contribution"], a, N)
             with client_store_lock:
-                client_store.setdefault("peers",{}).setdefault(recipient,{})["session_key"] = session_key
+                client_store.setdefault("peers",{}).setdefault(recipient,{})["sending_session_key"] = session_key
             payload = response.get("payload").get("cipher_text")
             decrypted_payload = symmetric_decryption(key=session_key, payload=payload, iv=metadata["iv"], tag=metadata["tag"], aad=packet_type)
             decrypted_payload = json.loads(decrypted_payload.decode())
@@ -77,7 +77,7 @@ def client_login_step_2(cc_socket, recipient):
     with client_store_lock:
         username = client_store["self"]["username"]
         recipient_challenge = client_store["peers"][recipient]["recipient_challenge"]
-        session_key = client_store["peers"][recipient]["session_key"]
+        session_key = client_store["peers"][recipient]["sending_session_key"]
         
     seq = 3
     packet_type = "cc_auth"
@@ -139,7 +139,7 @@ def initiate_client_login(recipient):
 
 def send_message_to_recipient(recipient, message):
     with client_store_lock:
-        session_key = client_store["peers"][recipient]["session_key"]
+        session_key = client_store["peers"][recipient]["sending_session_key"]
         cc_socket = client_store["peers"][recipient]["socket"]
     payload = {
         "message": message

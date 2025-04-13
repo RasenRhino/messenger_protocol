@@ -39,7 +39,7 @@ def send_dh_contribution(cc_socket: socket.socket, sender_username, A):
     B = pow(g, b, N)
     session_key = compute_dh_key(A, b, N)
     with client_store_lock:
-        client_store.setdefault("peers",{}).setdefault(sender_username,{})["session_key"] = session_key
+        client_store.setdefault("peers",{}).setdefault(sender_username,{})["recieveing_session_key"] = session_key
 
     signature_dh_contribution = generate_signature(f"{str(B)}{packet_type}",signature_private_key)
 
@@ -76,7 +76,7 @@ def authenticate_sender(cc_socket, sender_username):
     metadata = response.get("metadata",{})
     validate_packet_field(metadata, packet_type="cc_auth", field="metadata", seq=3)
     with client_store_lock:
-        session_key = client_store["peers"][sender_username]["session_key"]
+        session_key = client_store["peers"][sender_username]["recieveing_session_key"]
         recipient_challenge = client_store["peers"][sender_username]["recipient_challenge"]
     payload = response.get("payload").get("cipher_text")
     decrypted_payload = symmetric_decryption(key=session_key, payload=payload, iv=metadata["iv"], tag=metadata["tag"], aad=packet_type)
@@ -93,7 +93,7 @@ def authenticate_sender(cc_socket, sender_username):
 
 def prove_recipient(cc_socket, sender_username):
     with client_store_lock:
-        session_key = client_store["peers"][sender_username]["session_key"]
+        session_key = client_store["peers"][sender_username]["recieveing_session_key"]
         sender_challenge = client_store["peers"][sender_username]["sender_challenge"]
     seq = 4
     packet_type = "cc_auth"
