@@ -24,7 +24,7 @@ class LogoutClient(Exception):
 class IdentityVerificationFailed(Exception):
     pass
 
-class StopClient(Exception):
+class ReconnectClient(Exception):
     pass
 
 class InvalidPacketType(Exception):

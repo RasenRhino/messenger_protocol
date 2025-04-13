@@ -32,8 +32,8 @@ def handle_pre_auth_error(response, nonce):
     if verify_signature(f"{payload['message']}{nonce}", signature, server_svpk):
         display_error(payload["message"])
     else:
-        print("Signature is not valid")
-    raise LogoutClient() # Change this later handle errors better.
+        print("Server sent an error but signature is not valid")
+    raise ReconnectClient("Server sent an error during authentication.")
 
 def handle_post_auth_error(response, nonce):
     with client_store_lock:
@@ -45,7 +45,7 @@ def handle_post_auth_error(response, nonce):
     decrypted_payload = json.loads(decrypted_payload.decode())
     validate_packet_field(decrypted_payload, packet_type="error", field="payload", state="post_auth")
     if nonce != decrypted_payload["nonce"]:
-        raise InvalidNonce()
+        raise InvalidNonce("Nonce doesn't match")
     display_error(decrypted_payload["message"])
 
 def display_error(error):

@@ -4,7 +4,7 @@ from config.config import load_server_address, client_store, client_store_lock, 
 from client.sender.cs_auth import login
 from crypto_utils.core import generate_random_port
 from client.commands import command_loop
-from config.exceptions import LogoutClient, StopClient
+from config.exceptions import LogoutClient, ReconnectClient
 
 def connect_to_server():
     try:
@@ -28,8 +28,8 @@ def run_client():
                 continue
         cs_socket = connect_to_server()
         if cs_socket is None:
-            print("[+] Retrying in 3 seconds...")
-            time.sleep(3)
+            print("[+] Retrying in 2 seconds...")
+            time.sleep(2)
             continue
         try:
             with client_store_lock:
@@ -39,22 +39,22 @@ def run_client():
             command_loop(cs_socket)
         except (ConnectionResetError, BrokenPipeError, socket.error) as e:
             print(f"[!] Disconnected or error occurred: {type(e).__name__}: {e}")
-            print(f"[+] Attempting to reconnect in 3 seconds...")
+            print(f"[+] Attempting to reconnect in 2 seconds...")
         except KeyboardInterrupt:
             print(f"\n[!] Quitting Gracefully.")
             break
         except LogoutClient:
             print(f"[+] Logging Out!")
             break
-        except StopClient as e:
+        except ReconnectClient as e:
             print(f"[+] Exception: {type(e).__name__}: {type(e).__name__}: {e}")
-            print(f"[+] Attempting to reconnect in 3 seconds...")
+            print(f"[+] Attempting to reconnect in 2 seconds...")
         except Exception as e:
             print(f"[!] Unknown Exception: {type(e).__name__}: {e}")
         finally:
             print(f"[+] Closing Socket")
             cs_socket.close()
-            time.sleep(1)
+            time.sleep(2)
 
 
 

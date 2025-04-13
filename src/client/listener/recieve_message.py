@@ -18,7 +18,7 @@ def handle_incoming_messages(cc_socket: socket.socket, sender_username):
         validate_packet_field(metadata, packet_type="incoming_message", field="metadata")
         with client_store_lock:
             session_key = client_store["peers"][sender_username]["recieveing_session_key"]
-        payload = packet.get("payload").get("cipher_text")
+        payload = packet.get("payload",{}).get("cipher_text")
         decrypted_payload = symmetric_decryption(session_key, payload, metadata["iv"], metadata["tag"], aad=packet_type)
         decrypted_payload = json.loads(decrypted_payload.decode())
         validate_packet_field(decrypted_payload, packet_type="incoming_message", field="payload")

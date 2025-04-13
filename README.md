@@ -9,5 +9,5 @@ docker run --rm -it --name chat-client --network container:chat-server chat-app 
 # To-Do
 - [ ] Add Robust Error Handling
 - [x] Add Rate Limit on Server Side. (Done for username enumeration, but we need to think about where else to put it)
-- [ ] Refactor and Optimize Code. Hardcode packet types in switch case. Update aad to take packet_type from recieved data.
+- [x] Refactor and Optimize Code. Hardcode packet types in switch case. Update aad to take packet_type from recieved data.
 - [ ] Close previous session at the server, if the user creates a new one. 

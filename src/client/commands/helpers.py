@@ -14,10 +14,6 @@ def client_login_step_1(cc_socket, recipient):
         recipient_epk = load_public_key_from_bytes(client_store["peers"][recipient]["encryption_public_key"])
         recipient_svpk = load_public_key_from_bytes(client_store["peers"][recipient]["signature_verification_public_key"])
         username = client_store["self"]["username"]
-        listen_address = (
-            client_store["peers"][recipient]["listen_address"].split(":")[0],
-            int(client_store["peers"][recipient]["listen_address"].split(":")[1]),
-        )
     seq = 1
     packet_type = "cc_auth"
     a = generate_dh_private_exponent()
@@ -46,6 +42,8 @@ def client_login_step_1(cc_socket, recipient):
     cc_socket.sendall(packet)
     
     response = cc_socket.recv(TCP_RECV_SIZE)
+    if not response:
+        raise ConnectionTerminated("Recipient has disconnected the session")
     response = json.loads(response.decode())
     
     packet_type = response.get("metadata").get("packet_type")
@@ -58,7 +56,7 @@ def client_login_step_1(cc_socket, recipient):
                 metadata["signature_dh_contribution"],
                 recipient_svpk
             ):
-                raise InvalidSignature()
+                raise InvalidSignature("Failed to Verify Signature of Recipient")
             session_key = compute_dh_key(metadata["dh_contribution"], a, N)
             with client_store_lock:
                 client_store.setdefault("peers",{}).setdefault(recipient,{})["sending_session_key"] = session_key
@@ -75,7 +73,6 @@ def client_login_step_1(cc_socket, recipient):
 
 def client_login_step_2(cc_socket, recipient):
     with client_store_lock:
-        username = client_store["self"]["username"]
         recipient_challenge = client_store["peers"][recipient]["recipient_challenge"]
         session_key = client_store["peers"][recipient]["sending_session_key"]
         
@@ -105,6 +102,8 @@ def client_login_step_2(cc_socket, recipient):
     
     cc_socket.sendall(packet)
     response = cc_socket.recv(TCP_RECV_SIZE)
+    if not response:
+        raise ConnectionTerminated("Recipient has disconnected the session")
     response = json.loads(response.decode())
     
     packet_type = response.get("metadata").get("packet_type")
@@ -121,7 +120,7 @@ def client_login_step_2(cc_socket, recipient):
             validate_packet_field(decrypted_payload, packet_type=packet_type, field="payload", seq=current_seq)
             sender_challenge_solution = H(sender_challenge)
             if sender_challenge_solution != decrypted_payload["sender_challenge_solution"]:
-                raise ChallengeResponseFailed()
+                raise ChallengeResponseFailed(f"{recipient} Failed to solve the Challenge")
             with client_store_lock:
                 client_store.setdefault("peers",{}).setdefault(recipient,{})["socket"] = cc_socket
 

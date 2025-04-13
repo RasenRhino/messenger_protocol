@@ -35,10 +35,10 @@ def login_step_1(cs_socket, username, password, g, N, k):
     cs_socket.sendall(packet)
     response = cs_socket.recv(TCP_RECV_SIZE)
     if not response:
-        raise StopClient("Server has disconnected the session")
+        raise ConnectionTerminated("Server has disconnected the session")
     response = json.loads(response.decode())
     
-    packet_type = response.get("metadata").get("packet_type")
+    packet_type = response.get("metadata",{}).get("packet_type")
     match packet_type:
         case "cs_auth":
             metadata = response.get("metadata")
@@ -46,7 +46,7 @@ def login_step_1(cs_socket, username, password, g, N, k):
             session_key = client_compute_srp_session_key(metadata["salt"], username, password, a, A, metadata["dh_contribution"], g, N, k)
             with client_store_lock:
                 client_store.setdefault("server",{})["session_key"] = session_key
-            payload = response.get("payload").get("cipher_text")
+            payload = response.get("payload",{}).get("cipher_text")
             decrypted_payload = symmetric_decryption(key=session_key, payload=payload, iv=metadata["iv"], tag=metadata["tag"], aad=packet_type)
             decrypted_payload = json.loads(decrypted_payload.decode())
             current_seq = decrypted_payload["seq"]
@@ -54,10 +54,9 @@ def login_step_1(cs_socket, username, password, g, N, k):
                 raise InvalidSeqNumber("Packet Seq Number is not in order")
             validate_packet_field(decrypted_payload, packet_type="cs_auth", field="payload", seq=current_seq)
             if nonce != decrypted_payload["nonce"]:
-                raise InvalidNonce()
+                raise InvalidNonce("Nonce doesn't match")
             with client_store_lock:
                 client_store.setdefault("server",{})["server_challenge"] = decrypted_payload["server_challenge"]
-        # Error cases need to be tweaked later
         case "error":
            handle_pre_auth_error(response, nonce)
 
@@ -94,7 +93,7 @@ def login_step_2(cs_socket):
     cs_socket.sendall(packet)
     response = cs_socket.recv(TCP_RECV_SIZE)
     if not response:
-        raise StopClient("Server has disconnected the session")
+        raise ConnectionTerminated("Server has disconnected the session")
     response = json.loads(response.decode())
     packet_type = response.get("metadata").get("packet_type")
     match packet_type:
@@ -109,11 +108,10 @@ def login_step_2(cs_socket):
                 raise InvalidSeqNumber("Packet Seq Number is not in order")
             validate_packet_field(decrypted_payload, packet_type="cs_auth", field="payload", seq=current_seq)
             if nonce != decrypted_payload["nonce"]:
-                raise InvalidNonce()
+                raise InvalidNonce("Nonce doesn't match")
             client_challenge_solution = H(client_challenge)
             if client_challenge_solution != decrypted_payload["client_challenge_solution"]:
-                raise ChallengeResponseFailed()
-        # Error cases need to be tweaked later
+                raise ChallengeResponseFailed("Server Failed to solve the challenge")
         case "error":
             handle_pre_auth_error(response, nonce)
 
@@ -150,7 +148,6 @@ def login_step_3(cs_socket, username):
         }
     }
     packet = json.dumps(msg).encode()
-    # 
     cs_socket.sendall(packet)
 
 def login(cs_socket: socket.socket):
