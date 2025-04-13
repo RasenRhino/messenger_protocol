@@ -32,7 +32,6 @@ def login_step_1(cs_socket, username, password, g, N, k):
     }
 
     packet = json.dumps(msg).encode()
-    # print(packet)
     cs_socket.sendall(packet)
     response = cs_socket.recv(TCP_RECV_SIZE)
     if not response:
@@ -52,7 +51,7 @@ def login_step_1(cs_socket, username, password, g, N, k):
             decrypted_payload = json.loads(decrypted_payload.decode())
             current_seq = decrypted_payload["seq"]
             if current_seq != 2:
-                raise InvalidSeqNumber()
+                raise InvalidSeqNumber("Packet Seq Number is not in order")
             validate_packet_field(decrypted_payload, packet_type="cs_auth", field="payload", seq=current_seq)
             if nonce != decrypted_payload["nonce"]:
                 raise InvalidNonce()
@@ -65,6 +64,7 @@ def login_step_1(cs_socket, username, password, g, N, k):
 def login_step_2(cs_socket):
     seq = 3
     nonce = generate_nonce()
+    packet_type = "cs_auth"
     with client_store_lock:
         server_challenge = client_store["server"]["server_challenge"]
         session_key = client_store["server"]["session_key"]
@@ -78,7 +78,7 @@ def login_step_2(cs_socket):
         "server_challenge_solution": server_challenge_solution,
         "client_challenge": client_challenge
     } 
-    result = symmetric_encryption(session_key, json.dumps(payload), aad="cs_auth")
+    result = symmetric_encryption(session_key, json.dumps(payload), aad=packet_type)
     msg = {
         "metadata": {
             "packet_type": "cs_auth",
@@ -86,7 +86,7 @@ def login_step_2(cs_socket):
             "tag": result["tag"]
         },
         "payload": {
-            "cipher_text": result["cipher_text"][:-2]
+            "cipher_text": result["cipher_text"]
         }
     }
 
@@ -106,7 +106,7 @@ def login_step_2(cs_socket):
             decrypted_payload = json.loads(decrypted_payload.decode())
             current_seq = decrypted_payload["seq"]
             if current_seq != 4:
-                raise InvalidSeqNumber()
+                raise InvalidSeqNumber("Packet Seq Number is not in order")
             validate_packet_field(decrypted_payload, packet_type="cs_auth", field="payload", seq=current_seq)
             if nonce != decrypted_payload["nonce"]:
                 raise InvalidNonce()
@@ -150,7 +150,7 @@ def login_step_3(cs_socket, username):
         }
     }
     packet = json.dumps(msg).encode()
-    # print(packet)
+    # 
     cs_socket.sendall(packet)
 
 def login(cs_socket: socket.socket):

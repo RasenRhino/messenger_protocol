@@ -8,39 +8,28 @@ def validate_packet_field(data, packet_type, field, seq=None, state=None):
     schema = None
     match packet_type:
         case "error":
-            schema = load_packet_schema(schema_type="error_pre_auth", field=field)
-            # jsonschema.validate(instance=data, schema=schema)
-            # raise ServerPreAuthError("Server sent an error during authentication")
             match state:
-                case "pre_auth":
-                    schema = load_packet_schema(schema_type="error_pre_auth", field=field)
-                case "post_auth":
-                    schema = load_packet_schema(schema_type="error_post_auth", field=field)
+                case "pre_auth" | "post_auth":
+                    schema = load_packet_schema(schema_type=packet_type, field=field, state=state)
                 case _:
                     raise InvalidErrorPacket("Server sent an error packet without state")
-        case "cs_auth":
-            schema = load_packet_schema(schema_type="cs_auth", field=field, seq=seq) 
-        case "list":
-            schema = load_packet_schema(schema_type="list", field=field, seq=seq) 
-        case "message":
-            schema = load_packet_schema(schema_type="message", field=field, seq=seq)
-        case "logout":
-            schema = load_packet_schema(schema_type="logout", field=field, seq=seq)
-        case "cc_auth":
-            schema = load_packet_schema(schema_type="cc_auth", field=field, seq=seq)
+        case "cs_auth" | "list" | "message" | "logout" | "cc_auth":
+            schema = load_packet_schema(schema_type=packet_type, field=field, seq=seq)
         case "incoming_message":
             schema = load_packet_schema(schema_type="incoming_message", field=field)
+        case _:
+            raise InvalidPacketType(f"packet_type: {packet_type} is not supported")
     jsonschema.validate(instance=data, schema=schema)
 
 def handle_pre_auth_error(response, nonce):
-    _, server_signature_verification_public_key = load_server_public_keys()
+    _, server_svpk = load_server_public_keys()
     metadata = response.get("metadata")
     validate_packet_field(metadata, packet_type="error", field="metadata", state="pre_auth")
 
     payload = response.get("payload")
     validate_packet_field(payload, packet_type="error", field="payload", state="pre_auth")
     signature = payload.get("signature")
-    if verify_signature(f"{payload['message']}{nonce}", signature, server_signature_verification_public_key):
+    if verify_signature(f"{payload['message']}{nonce}", signature, server_svpk):
         display_error(payload["message"])
     else:
         print("Signature is not valid")

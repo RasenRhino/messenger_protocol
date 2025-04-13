@@ -530,7 +530,7 @@
             ],
             "additionalProperties": false
         },
-    "errors_schema": {
+    "error_schema": {
         "pre_auth": {
             "type": "object",
             "properties": {

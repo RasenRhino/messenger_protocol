@@ -26,3 +26,12 @@ class IdentityVerificationFailed(Exception):
 
 class StopClient(Exception):
     pass
+
+class InvalidPacketType(Exception):
+    pass
+
+class ConnectionTerminated(Exception):
+    pass
+
+class InvalidSchemaType(Exception):
+    pass

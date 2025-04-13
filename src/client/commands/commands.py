@@ -30,7 +30,6 @@ def send_list_packet(cs_socket):
     }
 
     packet = json.dumps(msg).encode()
-    # print(packet)
     cs_socket.sendall(packet)
     response = cs_socket.recv(TCP_RECV_SIZE)
     if not response:
@@ -46,7 +45,7 @@ def send_list_packet(cs_socket):
             decrypted_payload = json.loads(decrypted_payload.decode())
             current_seq = decrypted_payload["seq"]
             if current_seq != 2:
-                raise InvalidSeqNumber()
+                raise InvalidSeqNumber("Packet Seq Number is not in order")
             if nonce != decrypted_payload["nonce"]:
                 raise InvalidNonce()
             validate_packet_field(decrypted_payload, packet_type=packet_type, field="payload", seq=current_seq)
@@ -80,7 +79,7 @@ def send_message_packet(cs_socket, recipient, message, verify_identity=False):
     }
 
     packet = json.dumps(msg).encode()
-    # print(packet)
+    # 
     cs_socket.sendall(packet)
     response = cs_socket.recv(TCP_RECV_SIZE)
     if not response:
@@ -97,11 +96,11 @@ def send_message_packet(cs_socket, recipient, message, verify_identity=False):
             decrypted_payload = json.loads(decrypted_payload.decode())
             current_seq = decrypted_payload["seq"]
             if current_seq != 2:
-                raise InvalidSeqNumber()
+                raise InvalidSeqNumber("Packet Seq Number is not in order")
             if nonce != decrypted_payload["nonce"]:
                 raise InvalidNonce()
             validate_packet_field(decrypted_payload, packet_type=packet_type, field="payload", seq=current_seq)
-            display_message(f"Recieved Details of {recipient}: {decrypted_payload}")
+            # display_message(f"Recieved Details of {recipient}: {decrypted_payload}")
             with client_store_lock:
                 client_store.setdefault("peers",{}).setdefault(recipient,{})["encryption_public_key"] = decrypted_payload["encryption_public_key"]
                 client_store.setdefault("peers",{}).setdefault(recipient,{})["signature_verification_public_key"] = decrypted_payload["signature_verification_public_key"]
@@ -141,7 +140,7 @@ def send_logout_packet(cs_socket):
     }
 
     packet = json.dumps(msg).encode()
-    # print(packet)
+    # 
     cs_socket.sendall(packet)
     response = cs_socket.recv(TCP_RECV_SIZE)
     if not response:
@@ -158,7 +157,7 @@ def send_logout_packet(cs_socket):
             decrypted_payload = json.loads(decrypted_payload.decode())
             current_seq = decrypted_payload["seq"]
             if current_seq != 2:
-                raise InvalidSeqNumber()
+                raise InvalidSeqNumber("Packet Seq Number is not in order")
             if nonce != decrypted_payload["nonce"]:
                 raise InvalidNonce()
             validate_packet_field(decrypted_payload, packet_type=packet_type, field="payload", seq=current_seq)

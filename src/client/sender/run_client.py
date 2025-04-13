@@ -14,7 +14,7 @@ def connect_to_server():
         cs_socket.connect(server_address)
         return cs_socket
     except socket.error as e:
-        print(f"[!] Failed to connect: {e}")
+        print(f"[!] Failed to connect: {type(e).__name__}: {e}")
         return None
 
 def run_client():
@@ -38,23 +38,23 @@ def run_client():
             print("[+] Authenticated. You can now enter commands.")
             command_loop(cs_socket)
         except (ConnectionResetError, BrokenPipeError, socket.error) as e:
-            print(f"[!] Disconnected or error occurred: {e}")
+            print(f"[!] Disconnected or error occurred: {type(e).__name__}: {e}")
             print(f"[+] Attempting to reconnect in 3 seconds...")
         except KeyboardInterrupt:
-            print(f"[!] Quitting Gracefully.")
+            print(f"\n[!] Quitting Gracefully.")
             break
         except LogoutClient:
             print(f"[+] Logging Out!")
             break
         except StopClient as e:
-            print(f"[+] Server Error: {e}")
+            print(f"[+] Exception: {type(e).__name__}: {type(e).__name__}: {e}")
             print(f"[+] Attempting to reconnect in 3 seconds...")
         except Exception as e:
-            print(f"[!] Unknown Exception: {e}")
+            print(f"[!] Unknown Exception: {type(e).__name__}: {e}")
         finally:
             print(f"[+] Closing Socket")
             cs_socket.close()
-            time.sleep(0.1)
+            time.sleep(3)
 
 
 

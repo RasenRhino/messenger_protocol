@@ -43,8 +43,6 @@ def client_login_step_1(cc_socket, recipient):
     }
 
     packet = json.dumps(msg).encode()
-    print(packet)
-    
     cc_socket.connect(listen_address)
     cc_socket.sendall(packet)
     
@@ -70,7 +68,7 @@ def client_login_step_1(cc_socket, recipient):
             decrypted_payload = json.loads(decrypted_payload.decode())
             current_seq = decrypted_payload["seq"]
             if current_seq != 2:
-                raise InvalidSeqNumber()
+                raise InvalidSeqNumber("Packet Seq Number is not in order")
             validate_packet_field(decrypted_payload, packet_type=packet_type, field="payload", seq=current_seq)
             with client_store_lock:
                 client_store.setdefault("peers",{}).setdefault(recipient,{})["recipient_challenge"] = decrypted_payload["recipient_challenge"]
@@ -107,7 +105,7 @@ def client_login_step_2(cc_socket, recipient):
     }
 
     packet = json.dumps(msg).encode()
-    print(packet)
+    
     cc_socket.sendall(packet)
     response = cc_socket.recv(TCP_RECV_SIZE)
     response = json.loads(response.decode())
@@ -122,7 +120,7 @@ def client_login_step_2(cc_socket, recipient):
             decrypted_payload = json.loads(decrypted_payload.decode())
             current_seq = decrypted_payload["seq"]
             if current_seq != 4:
-                raise InvalidSeqNumber()
+                raise InvalidSeqNumber("Packet Seq Number is not in order")
             validate_packet_field(decrypted_payload, packet_type=packet_type, field="payload", seq=current_seq)
             sender_challenge_solution = H(sender_challenge)
             if sender_challenge_solution != decrypted_payload["sender_challenge_solution"]:
