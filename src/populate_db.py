@@ -15,7 +15,6 @@ from config.config import load_dh_public_params
 from crypto_utils.core import H, argon2_hash
 
 ROOT_DIR = str(Path(__file__).parent.resolve())
-print(f"ROOT_DIR: {ROOT_DIR}")
 JSON_FILE = f"{ROOT_DIR}/userdetails.json"
 DB_FILE = f"{ROOT_DIR}/store.db"
 TABLE_NAME = "users"
