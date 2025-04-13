@@ -54,7 +54,7 @@ def run_client():
         finally:
             print(f"[+] Closing Socket")
             cs_socket.close()
-            time.sleep(3)
+            time.sleep(1)
 
 
 

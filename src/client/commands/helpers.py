@@ -43,7 +43,6 @@ def client_login_step_1(cc_socket, recipient):
     }
 
     packet = json.dumps(msg).encode()
-    cc_socket.connect(listen_address)
     cc_socket.sendall(packet)
     
     response = cc_socket.recv(TCP_RECV_SIZE)
@@ -72,9 +71,6 @@ def client_login_step_1(cc_socket, recipient):
             validate_packet_field(decrypted_payload, packet_type=packet_type, field="payload", seq=current_seq)
             with client_store_lock:
                 client_store.setdefault("peers",{}).setdefault(recipient,{})["recipient_challenge"] = decrypted_payload["recipient_challenge"]
-        # Error cases need to be tweaked later
-        case "error":
-            pass
     
 
 def client_login_step_2(cc_socket, recipient):
@@ -82,6 +78,7 @@ def client_login_step_2(cc_socket, recipient):
         username = client_store["self"]["username"]
         recipient_challenge = client_store["peers"][recipient]["recipient_challenge"]
         session_key = client_store["peers"][recipient]["session_key"]
+        
     seq = 3
     packet_type = "cc_auth"
     recipient_challenge_solution = H(recipient_challenge)
@@ -127,12 +124,16 @@ def client_login_step_2(cc_socket, recipient):
                 raise ChallengeResponseFailed()
             with client_store_lock:
                 client_store.setdefault("peers",{}).setdefault(recipient,{})["socket"] = cc_socket
-        # Error cases need to be tweaked later
-        case "error":
-            pass
 
 def initiate_client_login(recipient):
+    with client_store_lock:
+        listen_address = (
+            client_store["peers"][recipient]["listen_address"].split(":")[0],
+            int(client_store["peers"][recipient]["listen_address"].split(":")[1]),
+        )
     cc_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    cc_socket.connect(listen_address)
+          
     client_login_step_1(cc_socket, recipient)
     client_login_step_2(cc_socket, recipient)
 

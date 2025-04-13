@@ -55,6 +55,13 @@ def send_list_packet(cs_socket):
         case "error":
             handle_post_auth_error(response, nonce)
 def send_message_packet(cs_socket, recipient, message, verify_identity=False):
+    is_authenticated = False
+    with client_store_lock:
+        if client_store.get("peers",{}).get(recipient,{}).get("socket"):
+            is_authenticated = True
+    if is_authenticated:
+        send_message_to_recipient(recipient, message)
+        return
     seq = 1
     packet_type = "message"
     nonce = generate_nonce()
@@ -107,8 +114,6 @@ def send_message_packet(cs_socket, recipient, message, verify_identity=False):
                 client_store.setdefault("peers",{}).setdefault(recipient,{})["listen_address"] = decrypted_payload["listen_address"]
             if verify_identity:
                 return
-            with client_store_lock:
-                client_store.setdefault("peers",{}).setdefault(recipient,{}).setdefault("message_queue",[]).append(message)
             initiate_client_login(recipient)
             send_message_to_recipient(recipient, message)
             
