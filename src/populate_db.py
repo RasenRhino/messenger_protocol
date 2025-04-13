@@ -9,7 +9,7 @@ from cryptography.hazmat.backends import default_backend
 import sys
 from pathlib import Path
 from config.config import load_dh_public_params
-from crypto_utils.core import H
+from crypto_utils.core import H, argon2_hash
 
 ROOT_DIR = str(Path(__file__).parent.resolve())
 JSON_FILE = f"{ROOT_DIR}/userdetails.json"
@@ -26,7 +26,7 @@ def hash_password_with_salt(password, salt):
     return H(salt,password)
 
 def generate_verifier(salt,username,password):
-    x = H(salt,username,password)
+    x = argon2_hash(salt,username,password)
     g,N,_=load_dh_public_params()
     v = pow(g, x, N)
     return v

@@ -8,6 +8,8 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 import base64
 import hashlib
 from cryptography.exceptions import InvalidSignature, InvalidTag
+from argon2 import PasswordHasher
+from argon2.low_level import hash_secret_raw, Type
 
 def load_private_key(file_path: str):
     """
@@ -171,6 +173,19 @@ def H(*args):
     a = ":".join(str(a) for a in args)
     return int(hashlib.sha3_512(a.encode()).hexdigest(), 16)
 
+def argon2_hash(salt, username, password):
+    a = f"{username}:{password}".encode()
+    hash_bytes = hash_secret_raw(
+        secret=a,
+        salt=salt.encode(),
+        time_cost=3,      
+        memory_cost=65536,
+        parallelism=2,
+        hash_len=32,
+        type=Type.I 
+    )
+    return int.from_bytes(hash_bytes, byteorder='big')
+
 def compute_dh_key(C, e, N):
     return hashlib.sha3_512(str(pow(C, e, N)).encode()).digest()[:32]
 
@@ -178,7 +193,7 @@ def client_srp_dh_public_contribution(g, a, N):
     return pow(g, a, N)
 
 def client_compute_srp_session_key(salt, username, password, a, A, B, g, N, k):
-    x = H(salt, username, password)
+    x = argon2_hash(salt, username, password)
     u = H(A, B)
     S_c = pow(B - (k * pow(g, x, N)), a + (u * x), N)
     K_c = H(S_c)
