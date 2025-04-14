@@ -50,7 +50,6 @@ def send_list_packet(cs_socket: socket.socket):
             if nonce != decrypted_payload["nonce"]:
                 raise InvalidNonce("Nonce doesn't match")
             validate_packet_field(decrypted_payload, packet_type=packet_type, field="payload", seq=current_seq)
-            display_message(decrypted_payload["signed_in_users"])
             return decrypted_payload["signed_in_users"]
         case "error":
             handle_post_auth_error(response, nonce)
