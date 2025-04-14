@@ -1,4 +1,13 @@
+# Install Dependencies
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip3 install -r requirements.txt
+```
+
 # User Setup 
+
 ### (Run this before running the application with or without Docker)
 
 #### Usage
@@ -107,12 +116,6 @@ Contains jsonschema for all the packets received by client
 
 IP address in of server needs to be configured in `server_details.json` (For eg. : 127.0.0.1)
 
-### Install Dependencies
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip3 install -r requirements.txt
-```
 
 
 ### Run Server and Clients
