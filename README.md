@@ -89,11 +89,14 @@ Information about application configuration files
 ###### dh_public_params.json
 Contains the public params required for generating DH contributions. 
 
+
 ###### server_details.json 
 Contains server host and port
 
+
 ###### json/ 
 Contains packet information
+
 
 ###### src/config/schema.json
 Contains jsonschema for all the packets received by client
@@ -101,6 +104,8 @@ Contains jsonschema for all the packets received by client
 # Run Client and server
 
 ## Local Setup
+
+IP address in of server needs to be configured in `server_details.json` (For eg. : 127.0.0.1)
 
 ### Install Dependencies
 ```bash
@@ -119,9 +124,15 @@ python3 src/client.py
 
 ## Docker Setup
 
+Consider changing the  before you run it via Docker 
+
+Change the IP address of the server in `server_details.json` of the docker container of server (use `docker inspect`)   
+
+
 ```bash
 docker build -t chat-app:latest .
 docker run --rm -it --name chat-server -v "$PWD/src:/app/src/" chat-app src/server/server.py
-docker run --rm -it -v "$PWD/src:/app/src/" --network container:chat-server chat-app src/client.py
+## Run multiple clients using this command 
+docker run --rm -it -v "$PWD/src:/app/src/" chat-app src/client.py
 ```
 
