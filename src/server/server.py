@@ -197,7 +197,7 @@ class ServerProtocol(Protocol):
                             metadata=Metadata(
                                 packet_type=PacketType.CS_AUTH.value,
                                 salt=salt,
-                                dh_contribution=B, ##generate a valid_dh_contribution
+                                dh_contribution=B,
                                 iv=cipher_text['iv'],
                                 tag=cipher_text['tag'],
                             ),
@@ -218,7 +218,7 @@ class ServerProtocol(Protocol):
                         return
                 except Exception as e:
                     print(f"[ERROR] in case 1 of cs_auth_handler : {e} ")
-                    self.send_error("Something went wrong while authenting",nonce=message.payload.nonce)
+                    self.send_error("Something went wrong while authenticating",nonce=message.payload.nonce)
                     return
 
             case 3:
@@ -256,19 +256,17 @@ class ServerProtocol(Protocol):
                     return
                 except Exception as e:
                     print(f"[ERROR] in case 3 of cs_auth_handler : {e} ")
-                    self.send_error("Something went wrong while authenting",state=ProtocolState.PRE_AUTH.value,nonce=message.payload.nonce)
+                    self.send_error("Something went wrong while authenticating",state=ProtocolState.PRE_AUTH.value,nonce=message.payload.nonce)
                     return
  
             case 5:
-                #check if the payload has the required key-value pairs or not
                 try:
                     self.factory.add_user_to_userlist(message.payload.username,message.payload.encryption_public_key,message.payload.signature_verification_public_key,message.payload.listen_address)
-                    #should we add any authentication messsage confirmation ?? 
                     self.state_dict[PacketType.CS_AUTH.value]=0 # 0 means authentication successful
                     return
                 except Exception as e:
                     print(f"[ERROR] in case 5 of cs_auth_handler : {e} ")
-                    self.send_error("Something went wrong while authenting",state=ProtocolState.PRE_AUTH.value,nonce=message.payload.nonce)
+                    self.send_error("Something went wrong while authenticating",state=ProtocolState.PRE_AUTH.value,nonce=message.payload.nonce)
                     
                 return
             case _:
@@ -283,7 +281,6 @@ class ServerProtocol(Protocol):
             message = parse_message(data, decrypt_fn=symmetric_decryption, key=self.symmetric_key)
         except Exception as e:
             print(f"Exception at message handler: {e}")
-            # self.send_error("Invalid message format for message request", nonce=message.payload.nonce)
             self.transport.loseConnection()
             return
 
