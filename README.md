@@ -13,7 +13,7 @@ pip3 install -r requirements.txt
 #### Usage
 
 ```
-python populate_db.py -h
+python src/populate_db.py -h
 
 Initialize user details and store them in an SQLite database.
 
