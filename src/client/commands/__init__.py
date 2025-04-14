@@ -1,13 +1,14 @@
 import socket
 import time
-import sys
 import inspect
-from config.config import TCP_RECV_SIZE
+from client.helpers import display_error
 from client.commands.commands import send_list_packet, send_message_packet, send_logout_packet
+from config.exceptions import RecipientOffline
+from config.config import client_store, client_store_lock
 
 def command_loop(cs_socket: socket.socket):
-    try:
-        while True:
+    while True:
+        try:
             command = input("+> ").split(" ")
             operation = command[0].lower()
             
@@ -17,6 +18,12 @@ def command_loop(cs_socket: socket.socket):
                 case "send":
                     recipient = command[1]
                     message = " ".join(command[2:])
+                    signed_in_users = send_list_packet(cs_socket)
+                    if recipient not in signed_in_users:
+                        with client_store_lock:
+                            if client_store.get("peers",{}).get(recipient):
+                                del client_store["peers"][recipient]
+                        raise RecipientOffline(f"{recipient} is not online currently.")
                     send_message_packet(cs_socket, recipient, message)
                 case "logout":
                     send_logout_packet(cs_socket)
@@ -25,27 +32,9 @@ def command_loop(cs_socket: socket.socket):
                             +> Operation {operation} is not supported
                             +> Suppoerted Operations: 
                             +> list
-                            +> send <USERNAME> <MESSAGE>""")
-                    sys.stderr.write(f"{error}\n")
+                            +> send <USERNAME> <MESSAGE>
+                            +> logout""")
+                    print(f"{error}")
             time.sleep(0.1)
-            # command = input(">> ")
-            # if not command.strip():
-            #     continue
-            # msg = command.encode()
-            # try:
-            #     cs_socket.sendall(msg)
-            # except socket.error as e:
-            #     print(f"Error sending command: {e}")
-            #     raise ConnectionResetError("Server socket closed")
-
-            # try:
-            #     response = cs_socket.recv(TCP_RECV_SIZE)
-            #     if not response:
-            #         raise ConnectionResetError("Server closed the connection.")
-            #     print(f"Server: {response.decode()}")
-            # except socket.error as e:
-            #     print(f"Error receiving response: {e}")
-            #     raise ConnectionResetError("Socket error")
-    except (ConnectionResetError, BrokenPipeError) as e:
-        print(f"[!] Lost connection in command loop: {e}")
-        raise Exception("Lost Connection in command loop")
+        except RecipientOffline as e:
+            display_error(e)

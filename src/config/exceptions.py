@@ -23,3 +23,18 @@ class LogoutClient(Exception):
 
 class IdentityVerificationFailed(Exception):
     pass
+
+class ReconnectClient(Exception):
+    pass
+
+class InvalidPacketType(Exception):
+    pass
+
+class ConnectionTerminated(Exception):
+    pass
+
+class InvalidSchemaType(Exception):
+    pass
+
+class RecipientOffline(Exception):
+    pass

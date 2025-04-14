@@ -452,17 +452,6 @@ class ServerFactory(Factory):
         self.blacklisted_ips = set()
         # self.blacklisted_ips.add("127.0.0.1") For Testing
         self.rate_limit_counter = {}
-        # Add dummy user "Bob" with random keys and address
-        random_enc_key = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
-        random_sign_key = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(32))
-        random_ip = f"192.168.1.{secrets.randbelow(255)}:{secrets.randbelow(10000)+10000}"
-
-        self.add_user_to_userlist(
-            username="Bob",
-            enc_key=random_enc_key,
-            sign_key=random_sign_key,
-            address=random_ip
-        )
 
         try:
             self.private_key_encryption = load_private_key(PRIVATE_KEY_ENCRYPTION)
