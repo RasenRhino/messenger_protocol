@@ -35,3 +35,6 @@ class ConnectionTerminated(Exception):
 
 class InvalidSchemaType(Exception):
     pass
+
+class RecipientOffline(Exception):
+    pass

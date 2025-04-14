@@ -2,9 +2,9 @@ import socket
 import time
 from config.config import load_server_address, client_store, client_store_lock, TCP_RECV_SIZE
 from client.sender.cs_auth import login
-from crypto_utils.core import generate_random_port
+from client.helpers import display_error
 from client.commands import command_loop
-from config.exceptions import LogoutClient, ReconnectClient
+from config.exceptions import LogoutClient, ReconnectClient, RecipientOffline
 
 def connect_to_server():
     try:
