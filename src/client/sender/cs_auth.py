@@ -27,7 +27,7 @@ def login_step_1(cs_socket, username, password, g, N, k):
             "dh_contribution": A,
         },
         "payload": {
-            "cipher_text": encoded_payload +'abcdf'
+            "cipher_text": encoded_payload 
         }
     }
 
