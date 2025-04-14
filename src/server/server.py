@@ -333,15 +333,9 @@ class ServerProtocol(Protocol):
             return
         try:
             message = parse_message(data, decrypt_fn=symmetric_decryption, key=self.symmetric_key)
-        except DecryptionFailed:
-            self.transport.loseConnection()
-            return
-        except ServerError:
-            self.transport.loseConnection()
-            return
         except Exception as e:
+            self.transport.loseConnection()
             print(f"Exception at message handler: {e}")
-            self.send_error("Invalid message format" ,nonce=message.payload.nonce)
             return
         match message.payload.seq:
             case 1:
