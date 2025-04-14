@@ -1,4 +1,5 @@
 # src/crypto_utils/core.py
+import time
 import random
 import secrets
 from cryptography.hazmat.primitives import hashes, serialization
@@ -112,6 +113,7 @@ def symmetric_decryption(key: bytes, payload:str,iv:str, tag: str, aad: str) -> 
     decryptor.authenticate_additional_data(aad)
     # Perform decryption
     plaintext = decryptor.update(payload) + decryptor.finalize()
+    time.sleep(1)
     return plaintext
 def symmetric_encryption(key: bytes, payload: str, aad: str) -> dict:
     """

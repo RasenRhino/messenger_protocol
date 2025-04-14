@@ -28,11 +28,11 @@ def handle_client(cc_socket: socket.socket):
                 handle_client_login(cc_socket, packet)
             case _:
                 raise InvalidPacketType(f"Only packet_type: 'cc_auth' is allowed. Received packet_type: {packet_type}.")
-    except Exception as e:
-        print(f"Closing socket: {cc_socket}")
+    except ConnectionTerminated as e:
         cc_socket.close()
-        print(f"[!] {threading.current_thread().name}: {type(e).__name__}: {e}")
-
+    except Exception as e:
+        cc_socket.close()
+        print(f"[!] Exception: {type(e).__name__}: {e}")
 def start_listener():
     while True:
         try:
@@ -58,7 +58,6 @@ def start_listener():
             try:
                 client_thread = threading.Thread(target=handle_client, args=(cc_socket,), name=f"Client-{i}", daemon=True)
                 client_thread.start()
-                print(f"Thread for Client-{i} started")
                 i += 1
             except Exception as e:
                 print(f"[!] Exception: {type(e).__name__}: {e}")

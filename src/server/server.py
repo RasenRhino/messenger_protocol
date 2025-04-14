@@ -2,7 +2,6 @@ import sys
 from pathlib import Path
 
 ROOT_DIR = str(Path(__file__).parent.parent.resolve())
-print(ROOT_DIR)
 if ROOT_DIR not in sys.path:
     sys.path.append(ROOT_DIR)
 from config.config import load_dh_public_params
@@ -107,7 +106,6 @@ class ServerProtocol(Protocol):
         error_msg = self.create_error_message(message_str, state, nonce)
         if state == ProtocolState.PRE_AUTH.value:
             signature = generate_signature(f"{message_str}{nonce}",self.factory.private_key_signing)
-            print(signature)
             error_msg.payload.signature=signature
 
         # Encrypt the message if we're in the post-auth state
@@ -260,11 +258,9 @@ class ServerProtocol(Protocol):
             case 5:
                 #check if the payload has the required key-value pairs or not
                 try:
-                    print(message.payload)
                     self.factory.add_user_to_userlist(message.payload.username,message.payload.encryption_public_key,message.payload.signature_verification_public_key,message.payload.listen_address)
                     #should we add any authentication messsage confirmation ?? 
                     self.state_dict[PacketType.CS_AUTH.value]=0 # 0 means authentication successful
-                    print(self.factory.userlist)
                     return
                 except Exception as e:
                     print(f"[ERROR] in case 5 of cs_auth_handler : {e} ")
