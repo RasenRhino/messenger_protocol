@@ -40,7 +40,7 @@ def start_listener():
             listening_port = generate_random_port()
             listen_address = ('0.0.0.0', listening_port)
             listener_socket.bind(listen_address)
-            listener_socket.listen(5)
+            listener_socket.listen()
             listening_ip = get_local_ip()
             print(f"[+] Client listening on {listen_address}")
             break
