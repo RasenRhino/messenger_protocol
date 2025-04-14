@@ -1,4 +1,9 @@
-# Install Dependencies
+# Chat application protocol 
+Char application protocol developed leveraging [SRP](https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol). See the pdf for more details.
+
+# Setup
+
+## Install Dependencies
 
 ```bash
 python3 -m venv venv
@@ -6,7 +11,7 @@ source venv/bin/activate
 pip3 install -r requirements.txt
 ```
 
-# User Setup 
+## User Setup 
 
 ### (Run this before running the application with or without Docker)
 
@@ -68,7 +73,7 @@ To use your own user data, generate a custom file
 Example file can be found in `src/custom_userdetails.json`
 
 
-# SQLite schema 
+## SQLite schema 
 
 
 Insertion is handled by `populate_db.py` script. Stores the verifier and salt corresponding to the user password in `store.db` 
@@ -86,12 +91,12 @@ Insertion is handled by `populate_db.py` script. Stores the verifier and salt co
 `username` is unique endpoint identifier
 `verifier` and `salt` are genetated during the execution of `populate_db.py` in the `userdetails.json`
 
-# Generate Keys
+## Generate Keys
 
 From the `src` directory, run `genkey.sh` if you need new key pairs. 
 Keypairs are stored in the `src/config` directory  
 
-# Configuration
+## Configuration
 
 Information about application configuration files 
 
@@ -110,22 +115,22 @@ Contains packet information
 ###### src/config/schema.json
 Contains jsonschema for all the packets received by client
 
-# Run Client and server
+## Run Client and server
 
-## Local Setup
+### Local Setup
 
 IP address in of server needs to be configured in `server_details.json` (For eg. : 127.0.0.1)
 
 
 
-### Run Server and Clients
+#### Run Server and Clients
 ```bash
 python3 src/server/server.py
 python3 src/client.py
 ```
 
 
-## Docker Setup
+### Docker Setup
 
 Consider changing the  before you run it via Docker 
 
