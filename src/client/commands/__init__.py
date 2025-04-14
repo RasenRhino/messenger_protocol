@@ -1,7 +1,7 @@
 import socket
 import time
 import inspect
-from client.helpers import display_error
+from client.helpers import display_message, display_error
 from client.commands.commands import send_list_packet, send_message_packet, send_logout_packet
 from config.exceptions import RecipientOffline
 from config.config import client_store, client_store_lock
@@ -14,7 +14,8 @@ def command_loop(cs_socket: socket.socket):
             
             match operation:
                 case "list":
-                    send_list_packet(cs_socket)
+                    signed_in_users = send_list_packet(cs_socket)
+                    display_message(signed_in_users)
                 case "send":
                     recipient = command[1]
                     message = " ".join(command[2:])
@@ -23,7 +24,7 @@ def command_loop(cs_socket: socket.socket):
                         with client_store_lock:
                             if client_store.get("peers",{}).get(recipient):
                                 del client_store["peers"][recipient]
-                        raise RecipientOffline(f"{recipient} is not online currently.")
+                        raise RecipientOffline(f"{recipient} is Offline.")
                     send_message_packet(cs_socket, recipient, message)
                 case "logout":
                     send_logout_packet(cs_socket)

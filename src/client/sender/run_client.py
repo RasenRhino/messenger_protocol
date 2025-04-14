@@ -1,10 +1,10 @@
 import socket
 import time
-from config.config import load_server_address, client_store, client_store_lock, TCP_RECV_SIZE
+from config.config import load_server_address, client_store, client_store_lock
 from client.sender.cs_auth import login
 from client.helpers import display_error
 from client.commands import command_loop
-from config.exceptions import LogoutClient, ReconnectClient, RecipientOffline
+from config.exceptions import LogoutClient, ReconnectClient
 
 def connect_to_server():
     try:

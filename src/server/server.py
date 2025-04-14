@@ -226,6 +226,10 @@ class ServerProtocol(Protocol):
                     server_challenge_hash=H(self.cs_auth_state['2']['server_challenge'])
                     if(server_challenge_hash != message.payload.server_challenge_solution):
                         self.send_error("Incorrect response to server challenge", nonce=message.payload.nonce)
+                        # Block Online Attacks
+                        self.factory.rate_limit_counter[self._peer_ip] = self.factory.rate_limit_counter.get(self._peer_ip,0) + 1
+                        if self.factory.rate_limit_counter[self._peer_ip] > 2:
+                            self.factory.blacklisted_ips.add(self._peer_ip)
                         return
                     
                     client_challenge_solution=H(message.payload.client_challenge)
@@ -445,7 +449,6 @@ class ServerFactory(Factory):
         self.numProtocols = 0
         self.userlist={}
         self.blacklisted_ips = set()
-        # self.blacklisted_ips.add("127.0.0.1") For Testing
         self.rate_limit_counter = {}
 
         try:

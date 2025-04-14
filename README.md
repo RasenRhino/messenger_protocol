@@ -1,5 +1,5 @@
 # User Setup 
-### (Run this before running the application)
+### (Run this before running the application with or without Docker)
 
 #### Usage
 
@@ -58,6 +58,18 @@ To use your own user data, generate a custom file
 
 Example file can be found in `src/custom_userdetails.json`
 
+# Local Setup
+## Install Dependencies
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip3 install -r requirements.txt
+```
+## Run Server and Clients
+```bash
+python3 src/server/server.py
+python3 src/client.py
+```
 
 # SQLite schema 
 
@@ -92,17 +104,16 @@ Contains the public params required for generating DH contributions.
 ###### server_details.json 
 Contains server host and port
 
+###### json/ 
+Contains packet information
+
+###### src/config/schema.json
+Contains jsonschema for all the packets received by client
+
 # Docker Setup
 
 ```bash
 docker build -t chat-app:latest .
-docker run --rm -it --name chat-server chat-app src/server/server.py
-docker run --rm -it --name chat-client --network container:chat-server chat-app src/client.py
+docker run --rm -it --name chat-server -v "$PWD/src:/app/src/" chat-app src/server/server.py
+docker run --rm -it -v "$PWD/src:/app/src/" --network container:chat-server chat-app src/client.py
 ```
-
-
-# To-Do
-- [ ] Add Robust Error Handling
-- [x] Add Rate Limit on Server Side. (Done for username enumeration, but we need to think about where else to put it)
-- [x] Refactor and Optimize Code. Hardcode packet types in switch case. Update aad to take packet_type from recieved data.
-- [ ] Close previous session at the server, if the user creates a new one. 
