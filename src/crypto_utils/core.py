@@ -193,6 +193,8 @@ def client_srp_dh_public_contribution(g, a, N):
     return pow(g, a, N)
 
 def client_compute_srp_session_key(salt, username, password, a, A, B, g, N, k):
+    if((B%N)== 0):
+        raise ValueError("Server public key is zero")
     x = argon2_hash(salt, username, password)
     u = H(A, B)
     S_c = pow(B - (k * pow(g, x, N)), a + (u * x), N)
@@ -204,6 +206,8 @@ def server_srp_dh_public_contribution(k, v, b, g, N):
     return B
 
 def server_compute_srp_session_key(k, v, b, B, A, N):
+    if((A%N)== 0):
+        raise ValueError("Client public key is zero")
     u = H(A, B)
     S_s = pow(A * pow(v, u, N), b, N)
     K_s = H(S_s)
