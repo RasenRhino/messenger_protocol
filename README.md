@@ -58,18 +58,6 @@ To use your own user data, generate a custom file
 
 Example file can be found in `src/custom_userdetails.json`
 
-# Local Setup
-## Install Dependencies
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip3 install -r requirements.txt
-```
-## Run Server and Clients
-```bash
-python3 src/server/server.py
-python3 src/client.py
-```
 
 # SQLite schema 
 
@@ -110,10 +98,30 @@ Contains packet information
 ###### src/config/schema.json
 Contains jsonschema for all the packets received by client
 
-# Docker Setup
+# Run Client and server
+
+## Local Setup
+
+### Install Dependencies
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip3 install -r requirements.txt
+```
+
+
+### Run Server and Clients
+```bash
+python3 src/server/server.py
+python3 src/client.py
+```
+
+
+## Docker Setup
 
 ```bash
 docker build -t chat-app:latest .
 docker run --rm -it --name chat-server -v "$PWD/src:/app/src/" chat-app src/server/server.py
 docker run --rm -it -v "$PWD/src:/app/src/" --network container:chat-server chat-app src/client.py
 ```
+
