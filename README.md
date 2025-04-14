@@ -22,7 +22,7 @@ options:
   --file, -f FILE  Path to a JSON file containing user data (username -> password).
 ```
 
-Outputs to `userdetails.json` 
+Outputs the credentials to `userdetails.json` 
 
 ##### Sample `userdetails.json`
 
