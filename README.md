@@ -1,5 +1,5 @@
 # Chat application protocol 
-Char application protocol developed leveraging [SRP](https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol). See the pdf for more details.
+Chat application protocol developed leveraging [SRP](https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol). See the pdf for more details. Check out [this video](https://drive.google.com/file/d/1y_frWCbtbAGoa6TnwgoyGZilhYv4vZNZ/view?usp=sharing) for in-depth explanation of design and exploits against other teams.
 
 # Setup
 
