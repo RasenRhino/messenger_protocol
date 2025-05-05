@@ -1,8 +1,0 @@
-setup.py
-crypto_utils/crypto_utils.egg-info/PKG-INFO
-crypto_utils/crypto_utils.egg-info/SOURCES.txt
-crypto_utils/crypto_utils.egg-info/dependency_links.txt
-crypto_utils/crypto_utils.egg-info/requires.txt
-crypto_utils/crypto_utils.egg-info/top_level.txt
-test/test_async.py
-test/test_server.py
