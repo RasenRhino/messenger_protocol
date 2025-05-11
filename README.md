@@ -1,6 +1,15 @@
 # Chat application protocol 
 Chat application protocol developed leveraging [SRP](https://en.wikipedia.org/wiki/Secure_Remote_Password_protocol). See the [pdf](https://github.com/RasenRhino/protocol_implementation/blob/f4a3cb978804b08e02f173f92c6f647cb89c9662/CY%206740%20-%20Design%20%26%20Vulnerability%20Report%20(Team%20-%208)%20Ritik-Ridham.pdf) for more details. Check out [this video](https://drive.google.com/file/d/1y_frWCbtbAGoa6TnwgoyGZilhYv4vZNZ/view?usp=sharing) for in-depth explanation of design and exploits against other teams.
 
+# Authentication Protocol FLow 
+
+<img width="694" alt="image" src="https://github.com/user-attachments/assets/849528fe-1a6b-4a5a-947e-98b3dfe9be8c" />
+
+# Message Protocol FLow 
+
+<img width="1001" alt="image" src="https://github.com/user-attachments/assets/6e656b0f-df04-4a53-8646-2211845ffcb2" />
+
+
 # Setup
 
 ## Install Dependencies
